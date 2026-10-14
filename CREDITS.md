@@ -2,7 +2,7 @@
 
 ## 3D models
 - NASA Crawler-Transporter (`models/crawler.glb`) - NASA 3D Resources, https://github.com/nasa/NASA-3D-Resources (NASA media usage guidelines; no copyright). Decimated + meshopt/WebP compressed.
-- `models/iss.glb` - NASA ISS (B), NASA 3D Resources (bundled for future orbital scenes).
+- `models/iss.glb` - NASA ISS (B), NASA 3D Resources (bundled, not yet placed in a scene).
 - All other vehicles, pads and buildings are procedural (code-built) by the APEX STRIKE project.
 
 ## Textures
