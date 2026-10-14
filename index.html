@@ -57,7 +57,7 @@ body.advanced .adv{display:flex}
 #mach{color:#f96}
 .pr{filter:brightness(1.25);transform:scale(.97)}.card,.chip,.btn,.tab{touch-action:manipulation;transition:transform .12s,filter .12s}#menu h1.logo .d1{display:block;font-size:1em;letter-spacing:.16em}#menu h1.logo .d2{display:block;font-size:.32em;letter-spacing:.6em;font-style:normal;font-weight:700;margin-top:.15em;-webkit-text-fill-color:#bfe9d8}</style>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/","three/examples/jsm/":"https://unpkg.com/three@0.160.0/examples/jsm/","postprocessing":"https://unpkg.com/postprocessing@6.36.4/build/index.js"}}</script>
-</head><body>
+</head><body><div id="ngSplash" style="position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;pointer-events:none;transition:opacity .6s ease;font:300 13px -apple-system,sans-serif;letter-spacing:.5em;color:rgba(255,255,255,.75)"><img src="brand/ng_logo.png" alt="Neill Gaming" style="width:min(46vw,220px)"><div>PRESENTS</div></div>
 <div id="flash"></div><div id="water"></div>
 <div id="hud"><div id="cross"></div><div class="panel" id="hl"></div><div class="panel" id="hr"></div><div class="panel" id="hc"></div><div id="msg"></div></div>
 <div id="touch">
@@ -3033,7 +3033,7 @@ buildMenu();
 #ngSplash{position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;pointer-events:none;transition:opacity .6s ease;font:300 13px -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:.5em;color:rgba(255,255,255,.75)}
 #ngSplash img{width:min(46vw,220px);animation:ngIn 1s cubic-bezier(.2,.9,.25,1) both}@keyframes ngIn{0%{opacity:0;transform:scale(.94)}100%{opacity:1;transform:none}}`;document.head.appendChild(css);
  const w=document.createElement('img');w.id='ngMark';w.src='brand/ng_logo.png';w.alt='';document.body.appendChild(w);
- const s=document.createElement('div');s.id='ngSplash';s.innerHTML='<img src="brand/ng_logo.png" alt="Neill Gaming"><div>PRESENTS</div>';document.body.appendChild(s);
+ const s=document.getElementById('ngSplash')||document.createElement('div');s.id='ngSplash';s.innerHTML='<img src="brand/ng_logo.png" alt="Neill Gaming"><div>PRESENTS</div>';document.body.appendChild(s);
  setTimeout(()=>{s.style.opacity=0;setTimeout(()=>s.remove(),700);},5000);}
 // ===== garmy.js: enemy ground forces that fight back (target practice). Tanks, infantry squads, SPAAG and SAM sites. SAMs route through gweak's weak spawnSAM + shared reload. =====
 const ARMY=(()=>{
