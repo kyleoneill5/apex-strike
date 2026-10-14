@@ -1,9 +1,9 @@
-# APEX STRIKE - Credits & Licenses
+# DOMINION: ALL DOMAIN WAR - Credits & Licenses
 
 ## 3D models
 - NASA Crawler-Transporter (`models/crawler.glb`) - NASA 3D Resources, https://github.com/nasa/NASA-3D-Resources (NASA media usage guidelines; no copyright). Decimated + meshopt/WebP compressed.
 - `models/iss.glb` - NASA ISS (B), NASA 3D Resources (bundled, not yet placed in a scene).
-- All other vehicles, pads and buildings are procedural (code-built) by the APEX STRIKE project.
+- All other vehicles, pads and buildings are procedural (code-built) by the DOMINION: ALL DOMAIN WAR project.
 
 ## Textures
 - Poly Haven (CC0, https://polyhaven.com): aerial_grass_rock, coast_sand_01, concrete_floor_02, asphalt_02 (2K diffuse/normal/roughness, `tex/`). Sky HDRI kloofendal_48d_partly_cloudy_puresky (CC0, loaded from Poly Haven CDN).
