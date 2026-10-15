@@ -3158,6 +3158,13 @@ window.__army=ARMY;
 // ===== DOMINION Play flow: Aircraft -> Loadout -> Launch (linear, iOS glass). Quick Launch remembers last setup =====
 {const css=document.createElement('style');css.textContent=`
 #menu.ios .dmWrap{animation-fill-mode:none!important}
+#menu.ios .flSeg{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:4px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.11);-webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);touch-action:pan-x}
+#menu.ios .flSeg::-webkit-scrollbar{display:none}
+#menu.ios .flTab{flex:none;padding:9px 15px;border-radius:12px;font-size:14px;font-weight:600;color:rgba(230,238,255,.7);white-space:nowrap;cursor:pointer;touch-action:manipulation;transition:background .25s cubic-bezier(.2,.9,.3,1),color .25s,box-shadow .25s,transform .15s}
+#menu.ios .flTab.on{background:rgba(255,255,255,.92);color:#0b1220;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#menu.ios .flTab.pr{transform:scale(.95)}
+#menu.ios .flCard.flIn{animation:flIn .45s cubic-bezier(.2,.9,.25,1.1)}
+@keyframes flIn{0%{opacity:.001;transform:translateX(26px) scale(.97)}100%{opacity:1;transform:none}}
 #menu.ios .flHead{display:flex;align-items:center;gap:12px;margin:0 0 4px}
 #menu.ios .flBack{width:40px;height:40px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);cursor:pointer;touch-action:manipulation;transition:transform .15s}
 #menu.ios .flBack svg{width:18px;height:18px}
@@ -3186,7 +3193,7 @@ window.__army=ARMY;
 #menu.ios .flGo{margin-top:10px;padding:22px;border-radius:24px;text-align:center;font-size:22px;font-weight:700;letter-spacing:.12em;background:linear-gradient(135deg,#4f8dff,#2f62e6);box-shadow:0 14px 40px rgba(47,98,230,.55),inset 0 1px 0 rgba(255,255,255,.35);cursor:pointer;touch-action:manipulation;transition:transform .18s cubic-bezier(.2,.9,.3,1.3)}
 #menu.ios .flGo small{display:block;font-size:12px;font-weight:500;letter-spacing:.06em;opacity:.75;margin-top:4px}
 #menu.ios .flNext{position:sticky;bottom:0}
-@media (orientation:landscape) and (max-height:500px){#menu.ios .flArt{height:96px}#menu.ios .flCard{flex-basis:44%}#menu.ios .flDesc{min-height:0;-webkit-line-clamp:2}#menu.ios .flT .h{font-size:22px}#menu.ios .dmWrap{width:min(760px,100%)}#menu.ios .dmLogo{margin:0 0 6px}#menu.ios .dmLogo .a{font-size:44px}}
+@media (orientation:landscape) and (max-height:500px){#menu.ios .flArt{height:96px}#menu.ios .flCard{flex-basis:44%}#menu.ios .flDesc{min-height:0;-webkit-line-clamp:2}#menu.ios .flT .h{font-size:22px}#menu.ios .dmWrap{width:min(760px,100%)}#menu.ios .flNext{position:static}#menu.ios .flGo{padding:13px;font-size:18px;margin-top:4px}#menu.ios .flCard{padding:12px}#menu.ios .flName{margin-top:8px}#menu.ios .dmLogo{margin:0 0 6px}#menu.ios .dmLogo .a{font-size:44px}}
 `;document.head.appendChild(css);}
 {
  const CLS={air:'JET',heli:'ROTOR',ship:'NAVAL',sub:'SUBSEA',silo:'STRATEGIC',rocket:'SPACE',space:'SPACE',orbit:'ORBITAL'};
@@ -3211,6 +3218,12 @@ window.__army=ARMY;
   el.onclick=e=>{if(guard())return;sfx&&sfx('ui');f(e);};return el;};
  const mk=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;};
  const CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+
+ const CATS=[['fighter','Fighters'],['bomber','Bombers'],['airliner','Airliners'],['heli','Helicopters'],['drone','Drones'],['space','Space & Experimental'],['naval','Ships & Subs'],['strategic','Strategic']];
+ const catOf=k=>{const d=DEFS[k]||{};if(/^(b7|a3|airliner)/.test(k))return'airliner';if(/^(b2|b52|b1|b21|ac130|bomber)/.test(k)||/bomber|gunship/i.test(d.name||''))return'bomber';
+  if(/drone|uav|mq9|reaper/i.test(k+(d.name||'')))return'drone';if(d.cls==='heli')return'heli';if(['ship','sub'].includes(d.cls))return'naval';
+  if(['darkstar','sr71','rods','shuttle'].includes(k)||d.cls==='rocket'||/space|orbit/i.test(d.cls||''))return'space';if(d.cls==='air')return'fighter';return'strategic';};
+ const catList=()=>{const have=new Set(Object.keys(DEFS).map(catOf));return CATS.filter(c=>have.has(c[0]));};
  let pick=null,flowFrom='home';
  const vehKey=()=>{const k=settings.lastVeh||settings.defVeh;return k&&DEFS[k]?k:'fighter';};
  const launch=k=>{settings.lastVeh=settings.defVeh=k;saveSettings();mission=null;menuView='home';spawn(k,settings.loc||'airbase');setPaused(false);};
@@ -3230,12 +3243,20 @@ window.__army=ARMY;
    const ml=tap(mk('div','dmLink','Missions'),()=>go('mis'));w.appendChild(ml);return;}
   if(menuView==='pick'){m.innerHTML='';const w=mk('div','dmWrap');m.appendChild(w);
    w.appendChild(head(1,flowFrom==='free'?'Free Play':'Choose Aircraft',()=>go('home')));
+   const cats=catList(),ck=cats.find(c=>c[0]===catOf(pick))?catOf(pick):(cats.find(c=>c[0]===settings.lastCat)||cats[0])[0];
+   const bar=mk('div','flSeg');bar.id='flSeg';w.appendChild(bar);
    const rail=mk('div','flRail');rail.id='flRail';w.appendChild(rail);
+   const show=(c,anim)=>{settings.lastCat=c;saveSettings();bar.querySelectorAll('.flTab').forEach(t=>t.classList.toggle('on',t.dataset.c===c));
+    const on=bar.querySelector('.flTab.on');if(on)bar.scrollTo({left:on.offsetLeft-(bar.clientWidth-on.clientWidth)/2,behavior:anim?'smooth':'auto'});
+    let first=null;rail.querySelectorAll('.flCard').forEach(x=>{const v=x.dataset.c===c;x.style.display=v?'':'none';if(v){if(!first)first=x;if(anim){x.classList.remove('flIn');void x.offsetWidth;x.classList.add('flIn');}}});
+    const sel=rail.querySelector('.flCard.sel');if(!sel||sel.dataset.c!==c){if(first){pick=first.dataset.k;rail.querySelectorAll('.flCard').forEach(x=>x.classList.toggle('sel',x===first));nb.innerHTML='Continue <small>'+DEFS[pick].name+'</small>';}}
+    rail.scrollLeft=0;const s2=rail.querySelector('.flCard.sel');if(s2)rail.scrollLeft=s2.offsetLeft-rail.offsetLeft-(rail.clientWidth-s2.clientWidth)/2;};
+   for(const [c,label] of cats){const t=tap(mk('div','flTab',label),()=>show(c,true));t.dataset.c=c;bar.appendChild(t);}
    for(const [k,d] of Object.entries(DEFS)){const st=stats(d);
     const c=mk('div','flCard'+(k===pick?' sel':''),`<div class="flArt">${art(k,d)}<div class="tag">${st[0][0]}</div></div><div class="flName">${d.name}</div><div class="flDesc">${d.desc||''}</div><div class="flStats">${st.map(s=>`<div><b>${s[0]}</b><span>${s[1]}</span></div>`).join('')}</div>`);
-    c.dataset.k=k;tap(c,()=>{if(pick===k){go('load');return;}pick=k;rail.querySelectorAll('.flCard').forEach(x=>x.classList.toggle('sel',x.dataset.k===k));c.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});nb.innerHTML='Continue <small>'+d.name+'</small>';});rail.appendChild(c);}
+    c.dataset.k=k;c.dataset.c=catOf(k);tap(c,()=>{if(pick===k){go('load');return;}pick=k;rail.querySelectorAll('.flCard').forEach(x=>x.classList.toggle('sel',x.dataset.k===k));c.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});nb.innerHTML='Continue <small>'+d.name+'</small>';});rail.appendChild(c);}
    const nb=tap(mk('div','flGo flNext','Continue <small>'+DEFS[pick].name+'</small>'),()=>go('load'));nb.id='flNext';w.appendChild(nb);
-   requestAnimationFrame(()=>{const s=rail.querySelector('.flCard.sel');if(s)rail.scrollLeft=s.offsetLeft-(rail.clientWidth-s.clientWidth)/2;});return;}
+   show(ck,false);requestAnimationFrame(()=>show(ck,false));return;}
   if(menuView==='load'){const d=DEFS[pick]||DEFS.fighter;m.innerHTML='';const w=mk('div','dmWrap');m.appendChild(w);
    w.appendChild(head(2,'Loadout',()=>go('pick')));
    const sm=mk('div','flSum',`<div class="flArt">${art(pick,d)}</div><div><b>${d.name}</b><small>${stats(d).map(s=>s[0]).join(' · ')}</small></div>`);w.appendChild(sm);
