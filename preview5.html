@@ -3353,11 +3353,20 @@ buildMenu();
  const mk=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;};
  const CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
 
- const CATS=[['fighter','Fighters'],['bomber','Bombers'],['airliner','Airliners'],['heli','Helicopters'],['drone','Drones'],['space','Space & Experimental'],['naval','Ships & Subs'],['strategic','Strategic']];
- const catOf=k=>{const d=DEFS[k]||{};if(/^(b7|a3|airliner)/.test(k))return'airliner';if(/^(b2|b52|b1|b21|ac130|bomber)/.test(k)||/bomber|gunship/i.test(d.name||''))return'bomber';
+ const CATS=[['fighter','Fighters'],['bomber','Bombers'],['airliner','Airliners'],['heli','Helicopters'],['drone','Drones'],['space','Space & Experimental'],['naval','Ships & Subs'],['strategic','Strategic'],['airdef','Air Defense']];
+ const catOf=k=>{if(String(k).startsWith('ad_'))return'airdef';const d=DEFS[k]||{};if(/^(b7|a3|airliner)/.test(k))return'airliner';if(/^(b2|b52|b1|b21|ac130|bomber)/.test(k)||/bomber|gunship/i.test(d.name||''))return'bomber';
   if(/drone|uav|mq9|reaper/i.test(k+(d.name||'')))return'drone';if(d.cls==='heli')return'heli';if(['ship','sub'].includes(d.cls))return'naval';
   if(['darkstar','sr71','rods','shuttle','tr3b','saucer'].includes(k)||d.cls==='rocket'||/space|orbit/i.test(d.cls||''))return'space';if(d.cls==='air')return'fighter';return'strategic';};
- const catList=()=>{const have=new Set(Object.keys(DEFS).map(catOf));return CATS.filter(c=>have.has(c[0]));};
+ const catList=()=>{const have=new Set(flEntries().map(e=>catOf(e[0])));return CATS.filter(c=>have.has(c[0]));};
+
+ const AD=()=>window.__airdef&&__airdef.TYPES||null;
+ const flEntries=()=>{const e=Object.entries(DEFS);const T=AD();if(T)for(const [k,t] of Object.entries(T))e.push(['ad_'+k,{name:t.name.replace(' battery',''),desc:'Enemy '+t.name+' ('+t.mk+'). Fly in and test it: it will engage you. Range '+Math.round(t.range/1000)+' km.',cls:'airdef',weapons:[]}]);return e;};
+ const nm=k=>{const e=flEntries().find(x=>x[0]===k);return e?e[1].name:'';};
+ const launchAD=k=>{const type=k.slice(3);const v=settings.lastVeh&&DEFS[settings.lastVeh]&&DEFS[settings.lastVeh].cls==='air'?settings.lastVeh:'fighter';
+  mission=null;menuView='home';spawn(v,'airbase');setPaused(false);
+  try{const S=__airdef.SITES.find(s=>s.type===type);const c=S&&S.radar&&(S.radar.position||S.radar.mesh&&S.radar.mesh.position)||S&&S.L;if(c&&player&&player.mesh){const a=Math.random()*6.283;const P=player.mesh.position;P.set(c.x+Math.cos(a)*9000,1800,c.z+Math.sin(a)*9000);
+   const dx=c.x-P.x,dz=c.z-P.z,h=Math.atan2(-dx,-dz);player.mesh.rotation.set(0,h,0);player.mesh.quaternion.setFromEuler(player.mesh.rotation);player.vel.set(dx,0,dz).normalize().multiplyScalar(180);player.onGround=false;inp.throttle=0.7;
+   msg((nm(k)||'AIR DEFENSE')+' SITE AHEAD · 9 km · EVADE!',3);}else msg('No '+nm(k)+' site on this map',2);}catch(e){showErr(e);}};
  let pick=null,flowFrom='home';
  const vehKey=()=>{const k=settings.lastVeh||settings.defVeh;return k&&DEFS[k]?k:'fighter';};
  const launch=k=>{settings.lastVeh=settings.defVeh=k;saveSettings();mission=null;menuView='home';spawn(k,settings.loc||'airbase');setPaused(false);};
@@ -3383,13 +3392,13 @@ buildMenu();
    const show=(c,anim)=>{settings.lastCat=c;saveSettings();bar.querySelectorAll('.flTab').forEach(t=>t.classList.toggle('on',t.dataset.c===c));
     const on=bar.querySelector('.flTab.on');if(on)bar.scrollTo({left:on.offsetLeft-(bar.clientWidth-on.clientWidth)/2,behavior:anim?'smooth':'auto'});
     let first=null;rail.querySelectorAll('.flCard').forEach(x=>{const v=x.dataset.c===c;x.style.display=v?'':'none';if(v){if(!first)first=x;if(anim){x.classList.remove('flIn');void x.offsetWidth;x.classList.add('flIn');}}});
-    const sel=rail.querySelector('.flCard.sel');if(!sel||sel.dataset.c!==c){if(first){pick=first.dataset.k;rail.querySelectorAll('.flCard').forEach(x=>x.classList.toggle('sel',x===first));nb.innerHTML='Continue <small>'+DEFS[pick].name+'</small>';}}
+    const sel=rail.querySelector('.flCard.sel');if(!sel||sel.dataset.c!==c){if(first){pick=first.dataset.k;rail.querySelectorAll('.flCard').forEach(x=>x.classList.toggle('sel',x===first));nb.innerHTML=(pick.startsWith('ad_')?'Fly In <small>':'Continue <small>')+nm(pick)+'</small>';}}
     rail.scrollLeft=0;const s2=rail.querySelector('.flCard.sel');if(s2)rail.scrollLeft=s2.offsetLeft-rail.offsetLeft-(rail.clientWidth-s2.clientWidth)/2;};
    for(const [c,label] of cats){const t=tap(mk('div','flTab',label),()=>show(c,true));t.dataset.c=c;bar.appendChild(t);}
-   for(const [k,d] of Object.entries(DEFS)){const st=stats(d);
+   for(const [k,d] of flEntries()){const st=stats(d);
     const c=mk('div','flCard'+(k===pick?' sel':''),`<div class="flArt">${art(k,d)}<div class="tag">${st[0][0]}</div></div><div class="flName">${d.name}</div><div class="flDesc">${d.desc||''}</div><div class="flStats">${st.map(s=>`<div><b>${s[0]}</b><span>${s[1]}</span></div>`).join('')}</div>`);
-    c.dataset.k=k;c.dataset.c=catOf(k);tap(c,()=>{if(pick===k){go('load');return;}pick=k;rail.querySelectorAll('.flCard').forEach(x=>x.classList.toggle('sel',x.dataset.k===k));c.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});nb.innerHTML='Continue <small>'+d.name+'</small>';});rail.appendChild(c);}
-   const nb=tap(mk('div','flGo flNext','Continue <small>'+DEFS[pick].name+'</small>'),()=>go('load'));nb.id='flNext';w.appendChild(nb);
+    c.dataset.k=k;c.dataset.c=catOf(k);tap(c,()=>{if(pick===k){k.startsWith('ad_')?launchAD(k):go('load');return;}pick=k;rail.querySelectorAll('.flCard').forEach(x=>x.classList.toggle('sel',x.dataset.k===k));c.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});nb.innerHTML=(k.startsWith('ad_')?'Fly In <small>':'Continue <small>')+d.name+'</small>';});rail.appendChild(c);}
+   const nb=tap(mk('div','flGo flNext','Continue <small>'+nm(pick)+'</small>'),()=>pick.startsWith('ad_')?launchAD(pick):go('load'));nb.id='flNext';w.appendChild(nb);
    show(ck,false);requestAnimationFrame(()=>show(ck,false));return;}
   if(menuView==='load'){const d=DEFS[pick]||DEFS.fighter;m.innerHTML='';const w=mk('div','dmWrap');m.appendChild(w);
    w.appendChild(head(2,'Loadout',()=>go('pick')));
@@ -4732,14 +4741,14 @@ body.thumb #thumbArc{position:fixed;pointer-events:none;z-index:4;border-radius:
  const probe=document.createElement('div');probe.style.cssText='position:fixed;visibility:hidden;pointer-events:none;padding:var(--sat,env(safe-area-inset-top)) var(--sar,env(safe-area-inset-right)) var(--sab,env(safe-area-inset-bottom)) var(--sal,env(safe-area-inset-left))';document.body.appendChild(probe);
  let SR={};const set=(el,x,y,s)=>{if(!el)return;x=Math.max(SR.l+s/2+6,Math.min(SR.r-s/2-6,x));y=Math.max(SR.t+s/2+6,Math.min(SR.b-s/2-6,y));(THUMB.rects=THUMB.rects||[]).push([x-s/2,y-s/2,x+s/2,y+s/2]);const st=el.style;st.setProperty('left',(x-s/2)+'px','important');st.setProperty('top',(y-s/2)+'px','important');st.setProperty('right','auto','important');st.setProperty('bottom','auto','important');st.setProperty('width',s+'px','important');st.setProperty('height',s+'px','important');};
  const clr=el=>{if(!el)return;for(const k of['left','top','right','bottom','width','height'])el.style.removeProperty(k);};
- const IDS=['bFire','bCam','bWpn','bCtx','bFlr'];
+ const IDS=['bFire','bWpn','bCtx'];
  THUMB.layout=function(){const W=innerWidth,H=innerHeight;const touch=matchMedia('(pointer:coarse)').matches||'ontouchstart'in window;const land=W>H;const want=touch&&land&&H<=520;
   if(!want){if(THUMB.on){THUMB.on=false;document.body.classList.remove('thumb');IDS.forEach(i=>clr(document.getElementById(i)));clr(document.getElementById('thr'));arc.style.display='none';}return;}
   THUMB.on=true;document.body.classList.add('thumb');const cs=getComputedStyle(probe);const sr=parseFloat(cs.paddingRight)||0,sb=parseFloat(cs.paddingBottom)||0,st=parseFloat(cs.paddingTop)||0;
   // pivot = base of the right thumb (just off the bottom-right corner, inside the safe area)
   const sl=parseFloat(cs.paddingLeft)||0;SR={l:sl,r:W-sr,t:st,b:H-sb};THUMB.rects=[];const thE=document.getElementById('thr'),thW=thE?(thE.offsetWidth||58):0;const px=W-sr-(thE?thW+30:18),py=H-sb+6;const r1=H*0.33,r2=H*0.62;const pol=(r,deg)=>[px+r*Math.cos(deg*Math.PI/180),py+r*Math.sin(deg*Math.PI/180)];
   // proven grid on the right-thumb arc: [id,right,bottom,size] from the safe-area corner (verified overlap-free 852..956 wide)
-  const G=[['bFire',90,26,100],['bWpn',210,22,66],['bCtx',196,104,66],['bCam',118,132,62],['bFlr',292,22,62]];
+  const G=[['bFire',90,26,100],['bWpn',210,22,66],['bCtx',196,104,66]];
   for(const [id,rr,bb,sz] of G){const e=document.getElementById(id);if(e)set(e,W-sr-rr-sz/2,H-sb-bb-sz/2,sz);}
   arc.style.display='block';Object.assign(arc.style,{left:(px-r2)+'px',top:(py-r2)+'px',width:(2*r2)+'px',height:(2*r2)+'px'});
   const t=thE;if(t){const hr=document.getElementById('hr');const hb=hr&&getComputedStyle(hr).display!=='none'?hr.getBoundingClientRect().bottom:st;const h=Math.max(72,Math.min(180,H-sb-22-(hb+10)));const q=t.style;q.setProperty('right',(sr+12)+'px','important');q.setProperty('top','auto','important');q.setProperty('left','auto','important');q.setProperty('bottom',(sb+22)+'px','important');q.setProperty('height',h+'px','important');}};
@@ -4817,6 +4826,27 @@ try{window.__milsim.thumb=THUMB;}catch(e){}
   else if(GPW)GPW.classList.remove('on');
  };
  window.__playCams=S;}
+
+// ===== GSTICK: fixed bottom-left stick (only touches starting inside it steer), open screen = pinch/camera; trimmed thumb cluster =====
+{const css=document.createElement('style');css.textContent=`
+html body #joyZone{left:calc(var(--sal,0px) + 8px)!important;bottom:calc(var(--sab,0px) + 12px)!important;top:auto!important;width:170px!important;height:170px!important;border-radius:50%!important}
+html body #joy{left:calc(var(--sal,0px) + 18px)!important;bottom:calc(var(--sab,0px) + 22px)!important;top:auto!important;opacity:.85!important}
+html body #bFlr{display:none!important}
+body.noCtx #bCtx{display:none!important}
+#topb #bCam{position:static!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;border-radius:999px!important;margin:0!important;padding:0!important;font-size:0!important;background-size:20px!important;background-position:center!important}
+@media (orientation:portrait){#topb #bCam,#topb #bRc{position:fixed!important;right:calc(var(--sar) + 10px)!important;left:auto!important}#topb #bCam{top:44%!important}#topb #bRc{top:calc(44% + 54px)!important}}`;document.head.appendChild(css);
+ const tb=document.getElementById('topb'),cam=document.getElementById('bCam');if(tb&&cam)tb.insertBefore(cam,tb.firstChild);
+ const Z0=document.getElementById('joyZone'),J=document.getElementById('joy'),K=document.getElementById('knob');
+ if(Z0&&J&&K){const Z=Z0.cloneNode(false);Z0.replaceWith(Z);let jid=null,cx=0,cy=0;const R=60;
+  const mv=e=>{let dx=(e.clientX-cx)/R,dy=(e.clientY-cy)/R;const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;}
+   joy.x=Math.sign(dx)*Math.pow(Math.abs(dx),1.4);joy.y=-Math.sign(dy)*Math.pow(Math.abs(dy),1.4);K.style.transform=`translate3d(${dx*45}px,${dy*45}px,0)`;};
+  Z.addEventListener('pointerdown',e=>{if(jid!==null)return;e.preventDefault();e.stopPropagation();jid=e.pointerId;try{Z.setPointerCapture(jid);}catch(_){}const r=J.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2;J.classList.add('act');mv(e);});
+  Z.addEventListener('pointermove',e=>{if(e.pointerId===jid)mv(e);},{passive:true});
+  const up=e=>{if(e.pointerId!==jid)return;jid=null;joy.x=joy.y=0;J.classList.remove('act');K.style.transform='';};
+  Z.addEventListener('pointerup',up);Z.addEventListener('pointercancel',up);}
+ const ctxNeed=()=>{const c=player&&player.def&&player.def.cls;return !!c&&!['air','heli'].includes(c);};
+ setInterval(()=>document.body.classList.toggle('noCtx',!ctxNeed()),400);document.body.classList.add('noCtx');
+}
 
 // ===== GTORP: steerable torpedo (depth + yaw) with deflecting grid fins, sinkable ship targets, ambient AI jets. Lean: procedural only =====
 {const T=THREE;
