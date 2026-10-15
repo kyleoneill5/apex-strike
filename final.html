@@ -5782,6 +5782,35 @@ window.__airdef=AIRDEF;
    if(d.p.y<groundAt(d.p.x,d.p.z).h||d.t>240){scene.remove(d.m);debris.splice(i,1);}}};
  window.__gicbmstage={debris,release};})();
 
+// ===== GSTAGING: clean Minuteman III stage separation. Flying missile is clipped at the live stage's aft end (no spent stage stuck on, no overall shrink);
+// each spent stage falls away as ONLY its own segment (real model, clipped to its station), with retro impulse, gentle tumble, gravity; plume off during the gap. =====
+(()=>{const T=THREE,S=window.__gicbmstage;if(!S)return;renderer.localClippingEnabled=true;
+ const ST=[0,7.5,11.3,13.9,99];// stations from tail (m) of LGM-30G: S1 0-7.5, S2 7.5-11.3, S3 11.3-13.9, bus/shroud above
+ const _a=new T.Vector3(),_b=new T.Vector3(),_f=new T.Vector3();const live=[];
+ const findM=m=>{let r=null;m.traverse(c=>{if(!r&&c.userData&&c.userData.stages)r=c;});return r;};
+ function own(root){const pl=[new T.Plane(),new T.Plane()];root.traverse(c=>{if(c.material){c.material=Array.isArray(c.material)?c.material.map(x=>x.clone()):c.material.clone();(Array.isArray(c.material)?c.material:[c.material]).forEach(x=>{x.clippingPlanes=pl;x.clipShadows=true;});}});return pl;}
+ // keep tail-distance in [lo,hi] of model M
+ function setClip(M,pl,lo,hi){M.updateWorldMatrix(true,false);const L=M.userData.len;M.localToWorld(_a.set(0,0,L/2));M.localToWorld(_b.set(0,0,-L/2));
+  _f.copy(_b).sub(_a);const len=_f.length()||1;_f.divideScalar(len);const k=len/L;// world fwd (tail->nose), scale
+  pl[0].normal.copy(_f);pl[0].constant=-_f.dot(_a)-lo*k;pl[1].normal.copy(_f).negate();pl[1].constant=_f.dot(_a)+hi*k;}
+ function onSep(o,i,d){// i = index of stage just dropped (0,1,2)
+  const M=findM(o.mesh);if(!M)return;if(!o._stPl){o._stPl=own(o.mesh);live.push(o);}o._stLo=ST[i+1];
+  d=d||S.debris[S.debris.length-1];if(!d)return;scene.remove(d.m);
+  const g=o.mesh.clone(true);g.position.copy(o.mesh.position);scene.add(g);
+  const dm=findM(g);const pl=own(g);d.m=g;d.p.copy(o.pos);d.w.multiplyScalar(0.35);d.clip={M:dm,pl,lo:ST[i]-0.02,hi:ST[i+1]};
+  // radial kick so it clears the plume path
+  d.v.add(_a.set(Math.random()-0.5,0,Math.random()-0.5).multiplyScalar(6));setClip(M,o._stPl,o._stLo,999);}
+ const MM_clone=()=>{const m=window.MSL_MODELS.minuteman3();m.rotation.x=-Math.PI/2;return m;};
+ const _u=updBallistic;updBallistic=function(o,dt){const s0=o.gs?o.gs.stg:(o.man?o.stg:-1),b0=o.gs&&o.gs.bus;_u(o,dt);
+  if(o.gs){if(o.gs.stg>s0&&s0>=0)onSep(o,s0);if(o.gs.bus&&!b0){onSep(o,2,S.debris[S.debris.length-3]);}
+   if(o.mesh.children[0]&&o.gs.stg>0)o.mesh.children[0].scale.setScalar(1);}// undo old whole-missile shrink
+ };
+ const _st=icbmStage;icbmStage=function(o){const s0=o.stg;_st(o);if(o.stg>s0&&s0<2)onSep(o,s0);};
+ const _gh=window.gameHook;window.gameHook=function(dt){if(_gh)_gh(dt);
+  for(let i=live.length-1;i>=0;i--){const o=live[i];if(o.done){live.splice(i,1);continue;}const M=findM(o.mesh);if(M)setClip(M,o._stPl,o._stLo,999);}
+  for(const d of S.debris)if(d.clip)setClip(d.clip.M,d.clip.pl,d.clip.lo,d.clip.hi);};
+ window.__gstaging={live,T};})();
+
 // ===== GSTARFLOP: Starship ship belly-flop (60-90 m/s, active flap trim), flip at ~550 m (aft flaps fold, fwd tuck, Raptor relight, ~3 s rotation), landing burn; strong flap control authority (auto + manual w/ assist) =====
 (()=>{const T=THREE,FLIP_ALT=560,FLIP_T=3.2;
  const _st=DS.step;DS.step=function(s,dt){if(s.mode!=='ship'&&!(s.bellyCdA&&s.CdA===63.6&&s.dry===120000)){return _st.apply(this,arguments);}
