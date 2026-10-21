@@ -213,11 +213,11 @@ import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 const $=id=>document.getElementById(id);
 const clamp=(x,a,b)=>x<a?a:x>b?b:x, lerp=(a,b,t)=>a+(b-a)*t, sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 const V3=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
-const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0||location.hash.includes('touch');const TK=(w,h)=>isTouch?Math.min(1,1024/Math.max(w,h),Math.sqrt(524288/(w*h))):1;
+const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0||location.hash.includes('touch');const TK=(w,h)=>isTouch?Math.min(1,1024/Math.max(w,h),Math.sqrt(262144/(w*h))):1;
 const settings=Object.assign({advanced:false,gyro:false,tut:false,quality:'high'},JSON.parse(localStorage.getItem('milsim_settings')||'{}'));
 const saveSettings=()=>localStorage.setItem('milsim_settings',JSON.stringify(settings));
 // ---------- renderer / scenes ----------
-const renderer=new THREE.WebGLRenderer({antialias:!isTouch,logarithmicDepthBuffer:true,powerPreference:'high-performance'});if(isTouch)renderer.capabilities.maxTextureSize=2048;if(isTouch){const g=renderer.getContext(),P=Object.getPrototypeOf(g),Q=[];const fr=c=>{if(c instanceof HTMLCanvasElement&&!c.isConnected&&c.width*c.height>=1<<19&&!c.__kept)Q.push(c);};
+const renderer=new THREE.WebGLRenderer({antialias:!isTouch,logarithmicDepthBuffer:true,powerPreference:'high-performance'});if(isTouch)renderer.capabilities.maxTextureSize=2048;if(isTouch){const g=renderer.getContext(),P=Object.getPrototypeOf(g),Q=[];const fr=c=>{if(c instanceof HTMLCanvasElement&&!c.isConnected&&c.width*c.height>=1<<16&&!c.__kept)Q.push(c);};
  for(const n of ['texImage2D','texSubImage2D']){const f=P[n];P[n]=function(){const r=f.apply(this,arguments);fr(arguments[arguments.length-1]);return r;};}
  setInterval(()=>{while(Q.length){const c=Q.pop();if(!c.isConnected){c.width=1;c.height=1;}}},2000);}
 renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.5:2));renderer.setSize(innerWidth,innerHeight);
@@ -1957,7 +1957,7 @@ const R3=(()=>{const T=THREE;const cv=(w,h)=>{const c=document.createElement('ca
   for(const s of[-1,1]){const tp=new T.Mesh(new T.CylinderGeometry(pr*0.42,pr*0.5,PH*0.85,24),M.ph);tp.position.set(s*pr*0.95,PH*0.48,0);piv.add(tp);
    const tc=new T.Mesh(new T.SphereGeometry(pr*0.42,16,8,0,Math.PI*2,0,Math.PI/2),M.ph);tc.scale.y=0.5;tc.position.set(s*pr*0.95,PH*0.9,0);piv.add(tc);}
   // ship #15 plumbing (Raptor 3 keeps it tight to the housings): 2 main propellant ducts turbopump->injector, hot-gas manifold ring, 4 small lines, ignitor/avionics box. Low-poly tubes (39 engines on the stack).
-  {const Q=(a,b2,c)=>new T.QuadraticBezierCurve3(a,b2,c);for(const s of[-1,1]){const d=new T.Mesh(new T.TubeGeometry(Q(new T.Vector3(s*pr*0.95,PH*0.2,0),new T.Vector3(s*pr*1.05,-0.05,s*pr*0.35),new T.Vector3(s*rc*0.55,0.05,rc*0.8)),8,pr*0.14,6,false),M.ph);piv.add(d);
+  if(!isTouch){const Q=(a,b2,c)=>new T.QuadraticBezierCurve3(a,b2,c);for(const s of[-1,1]){const d=new T.Mesh(new T.TubeGeometry(Q(new T.Vector3(s*pr*0.95,PH*0.2,0),new T.Vector3(s*pr*1.05,-0.05,s*pr*0.35),new T.Vector3(s*rc*0.55,0.05,rc*0.8)),8,pr*0.14,6,false),M.ph);piv.add(d);
     for(const k of[0,1]){const z=(k?1:-1)*pr*0.55;const l=new T.Mesh(new T.TubeGeometry(Q(new T.Vector3(s*pr*0.7,PH*(0.55+k*0.15),z),new T.Vector3(s*pr*1.1,PH*0.35,z*1.2),new T.Vector3(s*rc*0.9,0.1,z)),6,pr*0.035,5,false),M.dk);piv.add(l);}}
    const hg=new T.Mesh(new T.TorusGeometry(pr*0.78,pr*0.07,6,24).rotateX(Math.PI/2),M.ph);hg.position.y=PH*0.12;piv.add(hg);
    const ib=new T.Mesh(new T.BoxGeometry(pr*0.35,PH*0.22,pr*0.25),M.dk);ib.position.set(0,PH*0.55,pr*0.88);piv.add(ib);}
@@ -3551,7 +3551,7 @@ const _cw=new T.Vector3();function contrail(m,dt,rate){const y=m.position.y;if(y
  for(const e of A.engs){if(Math.random()>rate*k)continue;_cw.set(0,0,A.S.eng.len*1.15).applyMatrix4(e.matrixWorld);smoke.spawn(_cw,Math.random()-0.5,Math.random()-0.5,Math.random()-0.5,9,1.2*A.S.eng.R,5*A.S.eng.R,1,1,1,0.55,0.02,0);}}
 // ---------------- AI traffic ----------------
 const TR=[];let trInit=false;
-function traffic(dt){if(!trInit){trInit=true;const n=GQ.max>=1?6:3;for(let i=0;i<n;i++){const kind=KINDS[i%3];const m=build(kind,{lite:true});const R=9000+i*3500,alt=i<2?10200+i*700:2200+i*1300,sp=200+i*8,dir=i%2?1:-1;
+function traffic(dt){if(!trInit){trInit=true;const n=isTouch?2:GQ.max>=1?6:3;for(let i=0;i<n;i++){const kind=KINDS[i%3];const m=build(kind,{lite:true});const R=9000+i*3500,alt=i<2?10200+i*700:2200+i*1300,sp=200+i*8,dir=i%2?1:-1;
    m.userData.al.gearT=0;animate(m,0.01,{n1:0.8,gear:false});scene.add(m);TR.push({m,R,alt,sp,dir,a:i*1.7,cx:(i-2)*3000,cz:-6000+i*2000});}}
  for(const t of TR){t.a+=t.dir*t.sp/t.R*dt;const x=t.cx+Math.cos(t.a)*t.R,z=t.cz+Math.sin(t.a)*t.R;t.m.position.set(x,t.alt,z);
   const hx=-Math.sin(t.a)*t.dir,hz=Math.cos(t.a)*t.dir;const bank=Math.atan(t.sp*t.sp/(t.R*9.81))*t.dir;t.m.rotation.set(0,Math.atan2(-hx,-hz),0,'YXZ');t.m.rotation.z=-bank*0.9;
@@ -5571,7 +5571,7 @@ function install(){try{
   lf.position.y=-1.6;silo.add(lf);const d=lf.userData.door;// existing code sets door.position.x = 0 (closed) / 8 (open)
   const proxy={position:{set x(v){d.position.x=v;},get x(){return d.position.x;}}};silo.userData.door=proxy;silo.userData.lf=true;}
  // 2) enemy SAM sites: rebuild visual with Patriot battery, keep turret/radar pivots
- if(window.__army&&__army.KIND&&__army.KIND.sam){const make=()=>{const g=samSite();g.userData.army=1;return g;};__army.KIND.sam.make=make;
+ if(window.__army&&__army.KIND&&__army.KIND.sam){let _ss=null;const make=()=>{if(isTouch){if(!_ss)_ss=samSite();const g=_ss.clone();g.userData.army=1;return g;}const g=samSite();g.userData.army=1;return g;};__army.KIND.sam.make=make;
   for(const u of __army.U){if(u.type!=='sam')continue;const old=u.mesh,m=make();m.position.copy(old.position);m.quaternion.copy(old.quaternion);m.visible=old.visible;
    const ud={};m.traverse(o=>{if(o.name==='tu')ud.tu=o;if(o.name==='ant')ud.ant=o;if(o.isMesh){o.castShadow=true;o.userData.m0=o.material;}});Object.assign(m.userData,ud,{army:1});
    if(old.parent){old.parent.add(m);old.parent.remove(old);}u.mesh=m;}}
