@@ -213,11 +213,13 @@ import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 const $=id=>document.getElementById(id);
 const clamp=(x,a,b)=>x<a?a:x>b?b:x, lerp=(a,b,t)=>a+(b-a)*t, sstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 const V3=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
-const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0||location.hash.includes('touch');
+const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0||location.hash.includes('touch');const TK=(w,h)=>isTouch?Math.min(1,1024/Math.max(w,h),Math.sqrt(524288/(w*h))):1;
 const settings=Object.assign({advanced:false,gyro:false,tut:false,quality:'high'},JSON.parse(localStorage.getItem('milsim_settings')||'{}'));
 const saveSettings=()=>localStorage.setItem('milsim_settings',JSON.stringify(settings));
 // ---------- renderer / scenes ----------
-const renderer=new THREE.WebGLRenderer({antialias:!isTouch,logarithmicDepthBuffer:true,powerPreference:'high-performance'});
+const renderer=new THREE.WebGLRenderer({antialias:!isTouch,logarithmicDepthBuffer:true,powerPreference:'high-performance'});if(isTouch)renderer.capabilities.maxTextureSize=2048;if(isTouch){const g=renderer.getContext(),P=Object.getPrototypeOf(g),Q=[];const fr=c=>{if(c instanceof HTMLCanvasElement&&!c.isConnected&&c.width*c.height>=1<<19&&!c.__kept)Q.push(c);};
+ for(const n of ['texImage2D','texSubImage2D']){const f=P[n];P[n]=function(){const r=f.apply(this,arguments);fr(arguments[arguments.length-1]);return r;};}
+ setInterval(()=>{while(Q.length){const c=Q.pop();if(!c.isConnected){c.width=1;c.height=1;}}},2000);}
 renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.5:2));renderer.setSize(innerWidth,innerHeight);
 document.body.prepend(renderer.domElement);
 const HIGH=settings.quality!=='low';
@@ -2267,7 +2269,7 @@ var SR_NUM=decalTex((x,w,h)=>{x.clearRect(0,0,w,h);x.fillStyle='#c41a1a';x.font=
 //GDETAIL_SR71 – SR-71A detail pass: planform panel map + weathering (fuel seep, soot, wear), stencils, J58 nozzle iris/petals/stiffeners
 {const T=THREE,Z0=-16.37;const lathe=(...q)=>SR.lathe(...q);
  // planform map: x in [-8.6,8.6] -> u, s in [0,32.74] -> v. R: panel-line darkness, G: weathering grime, B: wear/polish
- const PW=2048,PH=4096,PX=x=>(x/8.6*0.5+0.5)*PW,PY=s=>s/32.74*PH;
+ const PW=isTouch?1024:2048,PH=isTouch?2048:4096,PX=x=>(x/8.6*0.5+0.5)*PW,PY=s=>s/32.74*PH;
  const pc=document.createElement('canvas');pc.width=PW;pc.height=PH;const x=pc.getContext('2d');x.fillStyle='rgb(0,0,0)';x.fillRect(0,0,PW,PH);let sd=11;const r=()=>(sd=(sd*16807)%2147483647)/2147483647;
  x.lineCap='round';
  const ln=(x0,s0,x1,s1,w=2.4,a=0.95)=>{x.strokeStyle=`rgba(255,0,0,${a})`;x.lineWidth=w;x.beginPath();x.moveTo(PX(x0),PY(s0));x.lineTo(PX(x1),PY(s1));x.stroke();};
@@ -2533,7 +2535,7 @@ try{window.__milsim.spawn=spawn;}catch(e){}try{window.__milsim.fireWeapon=fireWe
 {const b=$('bFire');if(b)b.addEventListener('pointerdown',()=>{if(player&&player.kind==='rods')fireWeapon(player);});}
 //GRODS2 – high-detail Rods from God: machined tungsten penetrators, detailed KE-6 bus, bow-shock re-entry, layered impact + sound
 const ROD2=(()=>{const T=THREE,c={};
- function cv(w,h,f){const e=document.createElement('canvas');e.width=w;e.height=h;f(e.getContext('2d'),w,h);const t=new T.CanvasTexture(e);t.anisotropy=8;t.colorSpace=T.SRGBColorSpace;return t;}
+ function cv(w,h,f){const e=document.createElement('canvas');const _k=TK(w,h);e.width=Math.max(1,w*_k|0);e.height=Math.max(1,h*_k|0);const _x=e.getContext('2d');_x.scale(_k,_k);f(_x,w,h);const t=new T.CanvasTexture(e);t.anisotropy=8;t.colorSpace=T.SRGBColorSpace;return t;}
  // brushed tungsten skin: longitudinal brushing, machined bands, stencils, heat-tint gradient near the nose
  c.rodMap=cv(512,2048,(x,W,H)=>{x.fillStyle='#7d8288';x.fillRect(0,0,W,H);for(let i=0;i<5000;i++){const g=110+Math.random()*40|0;x.fillStyle=`rgba(${g},${g+3},${g+6},0.12)`;x.fillRect(Math.random()*W,Math.random()*H,1+Math.random()*2,30+Math.random()*200);}
   const hg=x.createLinearGradient(0,0,0,H*0.25);hg.addColorStop(0,'rgba(60,40,90,0.55)');hg.addColorStop(0.4,'rgba(150,110,50,0.35)');hg.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=hg;x.fillRect(0,0,W,H*0.25);
@@ -2797,8 +2799,8 @@ const MSL_MODELS=(()=>{
 const T=THREE,PI=Math.PI,cache={};
 // ---------- canvas skin: base colour, bands, panel lines, rivets, stencils ----------
 function skin(key,o){if(cache[key])return cache[key];
- const W=1024,H=2048,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
- const r=document.createElement('canvas');r.width=W;r.height=H;const rx=r.getContext('2d');
+ const W=1024,H=2048,_mk=isTouch?0.5:1,c=document.createElement('canvas');c.width=W*_mk;c.height=H*_mk;const x=c.getContext('2d');x.scale(_mk,_mk);
+ const r=document.createElement('canvas');r.width=W*_mk;r.height=H*_mk;const rx=r.getContext('2d');rx.scale(_mk,_mk);
  x.fillStyle=o.base;x.fillRect(0,0,W,H);rx.fillStyle=o.rough||'#8a8a8a';rx.fillRect(0,0,W,H);
  // subtle grime / paint variation
  for(let i=0;i<1800;i++){x.fillStyle=`rgba(${o.dirt||'0,0,0'},${Math.random()*0.035})`;const s=4+Math.random()*40;x.fillRect(Math.random()*W,Math.random()*H,s*3,s);}
@@ -3195,7 +3197,7 @@ function fuseGeo(S){const NR=64,ss=[];for(let i=0;i<=40;i++)ss.push(S.Ln*Math.po
  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();return g;}
 // ---------------- livery (canvas) ----------------
 const NAVY='#0d2347',TEAL='#1aa6b7',GREY='#c4c8cc';
-function fuseTex(S){const W=4096,H=1024,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
+function fuseTex(S){const W=4096,H=1024,cv=document.createElement('canvas');const _k=TK(W,H);cv.width=W*_k;cv.height=H*_k;const x=cv.getContext('2d');x.scale(_k,_k);
  const PX=s=>W*(1-s/S.L);const PY=(f)=>H*(f/(2*PI));
  const phi=(s,y,side)=>{const q=sect(S,s);const c=Math.max(-1,Math.min(1,(y-q.c)/q.h));const f=Math.acos(c);return side>0?f:2*PI-f;};
  // base: white top, grey belly with soft split
@@ -3247,7 +3249,7 @@ function fuseTex(S){const W=4096,H=1024,cv=document.createElement('canvas');cv.w
   // nose radome seam + black anti-glare
   x.strokeStyle='rgba(0,0,0,0.25)';x.lineWidth=2;x.beginPath();x.moveTo(PX(S.Ln*0.24),0);x.lineTo(PX(S.Ln*0.24),H);x.stroke();}
  // ---- gmissiles-style PBR layers: roughness + bump (panel seams, lap joints, rivet rows, stencils, weathering) ----
- const rc=document.createElement('canvas');rc.width=W/2;rc.height=H/2;const r=rc.getContext('2d');const bc=document.createElement('canvas');bc.width=W;bc.height=H;const b=bc.getContext('2d');
+ const _k2=TK(W,H);const rc=document.createElement('canvas');rc.width=W/2*_k2;rc.height=H/2*_k2;const r=rc.getContext('2d');r.scale(_k2,_k2);const bc=document.createElement('canvas');bc.width=W*_k2;bc.height=H*_k2;const b=bc.getContext('2d');b.scale(_k2,_k2);
  r.fillStyle='#7a7a7a';r.fillRect(0,0,W/2,H/2);b.fillStyle='#808080';b.fillRect(0,0,W,H);
  for(let i=0;i<1500;i++){const v=110+Math.random()*40|0;r.fillStyle=`rgb(${v},${v},${v})`;r.globalAlpha=0.25;r.fillRect(Math.random()*W/2,Math.random()*H/2,10+Math.random()*80,2+Math.random()*10);}r.globalAlpha=1;
  const frameStep=S.L>60?0.533*4:0.508*4;
@@ -4273,7 +4275,7 @@ buildMenu();
 // Real: L 18.92 m, span 13.56 m, H 5.08 m, wing LE 42°, TE -17°, verticals canted 28°. Nose -Z, metres.
 {const T=THREE,PI=Math.PI;
 // ---------- skin: soft two-tone air-superiority gray (FS36170/36320 look from photo), silvery RAM sheen, panel lines w/ sawtooth doors ----------
-function cvs(w,h,f){const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;}
+function cvs(w,h,f){const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;}
 function tex(c,srgb){const t=new T.CanvasTexture(c);t.colorSpace=srgb?T.SRGBColorSpace:T.NoColorSpace;t.wrapS=t.wrapT=T.ClampToEdgeWrapping;t.anisotropy=8;return t;}
 let SK=null;
 function skinTex(){if(SK)return SK;const N=2048;let sd=7;const R=()=>(sd=(sd*16807)%2147483647)/2147483647;
@@ -5359,7 +5361,7 @@ window.__GT=THREE;
 //GLAUNCHERS-BEGIN  realistic ground launchers: Minuteman III silo (LF), Patriot M903 launcher + MPQ-65 radar (replaces army SAM site look), M142 HIMARS.
 const LAUNCHERS=(()=>{const T=THREE,PI=Math.PI;
 // ---------- textures ----------
-function cv(w,h,f){const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;}
+function cv(w,h,f){const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;}
 const TX={};function tex(c,srgb=true,rep=1){const t=new T.CanvasTexture(c);t.colorSpace=srgb?T.SRGBColorSpace:T.NoColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rep,rep);t.anisotropy=8;return t;}
 function noise(x,w,h,n,a,col){for(let i=0;i<n;i++){x.fillStyle=`rgba(${col},${Math.random()*a})`;const s=1+Math.random()*6;x.fillRect(Math.random()*w,Math.random()*h,s,s);}}
 function camoTex(key,cols,blobs=60){if(TX[key])return TX[key];const S=1024;
@@ -5602,7 +5604,7 @@ window.LAUNCHERS=LAUNCHERS;LAUNCHERS.install();try{LAUNCHERS.setupPlayer();}catc
 //GLAUNCHERS-END
 //GDETAIL_DARKSTAR-BEGIN  SR-72 "Darkstar" (Top Gun: Maverick design) at gmissiles.js standard. Nose -Z, metres, origin ~ CG.
 {const T=THREE,PI=Math.PI;let SK=null;
-function cvs(w,h,f){const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;}
+function cvs(w,h,f){const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;}
 function tex(c,srgb){const t=new T.CanvasTexture(c);if(srgb)t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;t.wrapS=t.wrapT=T.RepeatWrapping;return t;}
 // skin: u around/across, v along length (0 tail -> 1 nose). Matte charcoal RAM, sawtooth panel edges, fasteners, heat-staining aft, stencils
 function skin(){if(SK)return SK;const W=1024,H=2048;const Y=v=>(1-v)*H;
@@ -5709,7 +5711,7 @@ window.__darkstar=darkstar;}
 //GAIRDEF-BEGIN  THAAD + David's Sling batteries: real-scale detailed models + beatable enemy air defence. Metres; vehicles face -Z; missiles nose +Y in canister.
 const AIRDEF=(()=>{const T=THREE,PI=Math.PI,C={};
 // ---------------- textures / materials (cached, shared) ----------------
-function cvs(w,h,f){const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;}
+function cvs(w,h,f){const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;}
 function tx(c,srgb,r=1){const t=new T.CanvasTexture(c);if(srgb)t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(r,r);t.anisotropy=8;return t;}
 // vehicle paint: CARC/IDF base, panel seams, rivets, dust gradient, chipping
 function paint(key,base,dust){if(C[key])return C[key];const W=512,H=512;
@@ -6008,7 +6010,7 @@ window.__airdef=AIRDEF;
 //GAIRDEF-END
 //GDETAIL_FIGHTERS-BEGIN  F/A-18E Super Hornet, high detail. Real dims: L 18.31 m, span 13.62 m, H 4.88 m. Nose -Z, origin ~CG.
 const FIGHTERS=(()=>{const T=THREE,PI=Math.PI;
-function cv(w,h,f){const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;}
+function cv(w,h,f){const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;}
 function tx(c,srgb=true){const t=new T.CanvasTexture(c);t.colorSpace=srgb?T.SRGBColorSpace:T.NoColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;return t;}
 let SK=null;
 function skins(){if(SK)return SK;const S=2048;
@@ -6165,7 +6167,7 @@ window.FIGHTERS=FIGHTERS;
 //GDETAIL_FIGHTERS-END
 //GDETAIL_HELI-BEGIN  AH-64D Apache Longbow, missile-standard detail (real scale, metres, nose -Z, wheels at y≈-1.75)
 {const T=THREE,PI=Math.PI,HC={};
-const cvs=(w,h,f)=>{const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;};
+const cvs=(w,h,f)=>{const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;};
 const ctex=(c,srgb,wrap=true)=>{const t=new T.CanvasTexture(c);if(srgb)t.colorSpace=T.SRGBColorSpace;if(wrap)t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;return t;};
 function nrmFrom(c,str){const w=c.width,h=c.height,s=c.getContext('2d').getImageData(0,0,w,h).data;return ctex(cvs(w,h,(x)=>{const id=x.createImageData(w,h);const H=(i,j)=>s[(((j+h)%h)*w+((i+w)%w))*4]/255;
  for(let j=0;j<h;j++)for(let i=0;i<w;i++){const dx=(H(i-1,j)-H(i+1,j))*str,dy=(H(i,j-1)-H(i,j+1))*str,l=Math.hypot(dx,dy,1),k=(j*w+i)*4;id.data[k]=(dx/l*.5+.5)*255;id.data[k+1]=(dy/l*.5+.5)*255;id.data[k+2]=(1/l*.5+.5)*255;id.data[k+3]=255;}x.putImageData(id,0,0);}),false);}
@@ -6320,7 +6322,7 @@ window.__apache=apache;}
 //GDETAIL_HELI-END
 //GDETAIL_F35-BEGIN  Rebuilt from web refs (refs/f35a, refs/darkstar). F-35A: L 15.67 span 10.70 H 4.38 (USAF fact sheet / LM). Darkstar mockup: L 21.18 span 10.06 (Daniel Simon). Nose -Z, metres.
 {const T=THREE,PI=Math.PI;let SK=null,DK=null;
-const cv=(w,h,f)=>{const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;};
+const cv=(w,h,f)=>{const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;};
 const tx=(c,srgb=true)=>{const t=new T.CanvasTexture(c);t.colorSpace=srgb?T.SRGBColorSpace:T.NoColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;return t;};
 const R=Math.random;
 // ---------- F-35 skin: FS36170-ish gray RAM, lighter stepped/sawtooth LO-tape patches (as in USAF photo), fastener rows
@@ -7138,7 +7140,7 @@ var UFO_TOUCH=('ontouchstart' in window)||navigator.maxTouchPoints>0;
 // gmissiles-style canvas PBR: albedo + roughness + normal-from-height (panel seams, fasteners, RAM tiles, weathering); env-reactive MeshPhysical + real point lights.
 const TR3B=(()=>{const T=THREE,PI=Math.PI,S=40,R=S/Math.sqrt(3),Hc=3.2,Hb=1.6;
 const C=[0,1,2].map(i=>{const a=-PI/2+i*2*PI/3;return[Math.cos(a)*R,Math.sin(a)*R];});
-function cvs(w,h,f){const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;}
+function cvs(w,h,f){const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;}
 const tx=(c,s)=>{const t=new T.CanvasTexture(c);t.colorSpace=s?T.SRGBColorSpace:T.NoColorSpace;t.anisotropy=8;return t;};
 let SK=null;function skin(){if(SK)return SK;const W=2048,PX=x=>(x/(2*R)+0.5)*W,PZ=z=>(z/(2*R)+0.5)*W;
  const ht=cvs(W,W,x=>{x.fillStyle='#808080';x.fillRect(0,0,W,W);x.strokeStyle='#4c4c4c';x.lineWidth=3;
@@ -7238,7 +7240,7 @@ if(typeof ENG_CHAR!=='undefined')ENG_CHAR.tr3b={r:0.15,w:0.2,ab:0};
 //GSAUCER-BEGIN  Bob Lazar S-4 "Sport Model". CLAIMS ONLY. Every feature tagged with its source key from refs/saucer/sources.txt.
 // 40 ft x 15 ft (12.19 m x 4.57 m) [GOOD][K89]. Origin = belly bottom centre; disc sits on its belly, no legs [BLC].
 const SAUCER=(()=>{const T=THREE,PI=Math.PI,D=12.19,R=D/2,HT=4.57;
-function cvs(w,h,f){const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;}
+function cvs(w,h,f){const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;}
 const tx=(c,s)=>{const t=new T.CanvasTexture(c);t.colorSpace=s?T.SRGBColorSpace:T.NoColorSpace;t.anisotropy=8;t.wrapS=t.wrapT=T.RepeatWrapping;return t;};
 // seamless, no rivets/fasteners [G97][IUFOC15]; "made of wax, heated up, then cooled" -> soft low-frequency mottling only; unpolished stainless colour [BLC]
 let SK=null;function skin(){if(SK)return SK;const W=1024;
@@ -7841,7 +7843,7 @@ const _ub=updBallistic;updBallistic=function(o,dt){
 //GDETAIL_ENEMY-BEGIN  Photo-referenced MQ-9A, Shahed-136/Geran-2, Su-57, J-20, MiG-29 (9.12), F/A-18E. Refs + dims: /workspace/milsim/refs/<type>/sources.txt
 // Convention: nose -Z, +Y up, +X right (pilot's right = -X looking from front? no: +X = starboard when nose is -Z and up +Y => right-handed), origin ~mid-length. Metres.
 const ENEMY_AC=(()=>{const T=THREE,PI=Math.PI;
-const cv=(w,h,f)=>{const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;};
+const cv=(w,h,f)=>{const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;};
 const tx=(c,srgb=true)=>{const t=new T.CanvasTexture(c);t.colorSpace=srgb?T.SRGBColorSpace:T.NoColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;return t;};
 let R=0;const rnd=s=>{R=s;return()=>{R=(R*16807)%2147483647;return R/2147483647;};};
 // ---- skin: base + optional camo + panel lines/fasteners/access doors + weathering. u=around (loft) / x (surf), v=along
@@ -8064,7 +8066,10 @@ window.ENEMY_AC=ENEMY_AC;
 // ---- game hooks (guarded so the file also loads in the studio harness) ----
 if(typeof drone==='function'&&typeof targets!=='undefined'){
  const POOL=['shahed','mq9','su57','shahedB','j20','mig29'];let ci=0;const _dr=drone;
- const mk=()=>{const k=POOL[ci++%POOL.length];try{const m=k==='shahedB'?ENEMY_AC.shahed(true):ENEMY_AC[k]();m.userData.enemyType=k;
+ const _EC={};const _bld=k=>k==='shahedB'?ENEMY_AC.shahed(true):ENEMY_AC[k]();
+ const _get=k=>{if(!isTouch)return _bld(k);let o=_EC[k];if(!o){o=_EC[k]={m:_bld(k)};const pr=o.m.userData.prop;let i=0;o.m.traverse(x=>{if(x===pr)o.pi=i;i++;});o.ud=o.m.userData;}
+  const c=o.m.clone();c.userData=Object.assign({},o.ud);if(o.pi!==undefined){let i=0;c.traverse(x=>{if(i++===o.pi)c.userData.prop=x;});}return c;};
+ const mk=()=>{const k=POOL[ci++%POOL.length];try{const m=_get(k);m.userData.enemyType=k;
   if(k==='shahed'||k==='shahedB')m.scale.setScalar(2.2);// Shahed is 3.5 m: upscale for visibility at game ranges (hit radius unchanged)
   return m;}catch(e){console.warn('enemy model',e);return _dr();}};
  drone=mk;
@@ -8077,7 +8082,7 @@ if(typeof jet==='function'){const _j2=jet;jet=function(c,fa18,kind){if(!fa18||(k
 //GDETAIL_ENEMY-END
 // ===== GNAVY: US Navy task group (Ford CVN-78, Burke Flt III DDG-125, Tico CG-70, Zumwalt DDG-1000, LCS-2, America LHA-6) + VLS launch-point API. Refs: refs/navy_*/ =====
 const NAVYX=(()=>{const T=THREE,PI=Math.PI;
- const C={};const cvs=(w,h,f)=>{const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;};
+ const C={};const cvs=(w,h,f)=>{const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;};
  const tex=(c,srgb=true,rx=1,ry=1)=>{const t=new T.CanvasTexture(c);if(srgb)t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rx,ry);t.anisotropy=8;return t;};
  let SEED=1;const rr=()=>{SEED=(SEED*16807)%2147483647;return SEED/2147483647;};
  // ---- weathered haze-gray plating: panel seams, weld lines, rust streaks from scuppers, salt bleaching; key by paint ----
@@ -8347,7 +8352,7 @@ const NAVY_FLEET=(()=>{const T=THREE;const ships=[];if(typeof scene==='undefined
 // HARD RULES (Kyle): enemies NEVER get UFOs (TR-3B/saucer), SR-71, SR-72, nukes/ICBM/MIRV or space-launched weapons. Subs: cruise missiles + torpedoes ONLY. Jets: guns + air-to-air + cruise missiles ONLY (no nukes, no 50k bomb).
 const ENEMY_RULES=Object.freeze({forbiddenModels:['tr3b','saucer','sr71','sr72','darkstar'],ship:['cruise','ciws'],sub:['cruise','torpedo'],jet:['gun','aam','cruise']});
 const RED_FORCE=(()=>{const T=THREE,PI=Math.PI;if(typeof scene==='undefined'||typeof targets==='undefined')return null;
- const cvs=(w,h,f)=>{const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);return c;};
+ const cvs=(w,h,f)=>{const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);return c;};
  const tx=c=>{const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.anisotropy=4;return t;};
  const dm=c=>new T.MeshStandardMaterial({map:tx(c),transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,roughness:0.6,side:T.DoubleSide});
  // insignia: fictional Red Coalition - crimson disc, white ring, black star
@@ -8867,7 +8872,7 @@ window.__uiCards={apply,isMP};}
 (()=>{if(!window.MSL_MODELS)return;const T=THREE,PI=Math.PI;
  const SAN=m=>{m.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <dithering_fragment>','#include <dithering_fragment>\n{vec4 _c=gl_FragColor;if(any(isnan(_c))||any(isinf(_c)))_c=vec4(0.,0.,0.,1.);gl_FragColor=vec4(clamp(_c.rgb,0.,64.),clamp(_c.a,0.,1.));}');};m.customProgramCacheKey=()=>'gwhsan';return m;};
  const M=(c,r,m,o)=>SAN(new T.MeshStandardMaterial(Object.assign({color:c,roughness:r,metalness:m},o||{})));
- const cv=(w,h,f)=>{const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.wrapS=T.RepeatWrapping;t.anisotropy=8;return t;};
+ const cv=(w,h,f)=>{const c=document.createElement('canvas');const _k=TK(w,h);c.width=Math.max(1,w*_k|0);c.height=Math.max(1,h*_k|0);const _x=c.getContext('2d');_x.scale(_k,_k);f(_x,w,h);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.wrapS=T.RepeatWrapping;t.anisotropy=8;return t;};
  let TX=null;const tex=()=>TX||(TX={
   rv:cv(1024,1024,(x,W,H)=>{// v: 0 = base, 1 = nose. Joint ring at v~0.33: aft band (lighter, slightly bluish grey), forward cone darker
    x.fillStyle='#2c2b2a';x.fillRect(0,0,W,H);x.fillStyle='#3a3a3b';x.fillRect(0,H*0.67,W,H*0.33);
