@@ -188,7 +188,7 @@ function guide(s,h,q){const TARGET=s.cfg.target;
   const st=s.stages[s.stage];
   if(s.stage===0){
     if(h<1200)s.cmdPitch=90;else{const f=Math.min(1,(h-1200)/62000);s.cmdPitch=90-62*Math.pow(f,0.55);}
-    s.throttle=q>30000?0.72:1;
+    {const T=s.t;s.throttle=s.kind==='starship'?(T<40?0.9:T<78?0.68:h>40000?0.74:0.8):(T<34?1:T<72?0.72:0.92);if(q>34000)s.throttle=Math.min(s.throttle,0.6);}/*#27 real-time throttle bucket: time-scheduled so Max-Q lands ~T+1:10 */
     if(st.prop<=(st.reserve||0)){if(!s._sepT)s._sepT=s.t;if(s.t-s._sepT>(s.cfg.hot?0:2)){stageSep(s);s._sepT=0;}}
   }else{
     s.throttle=1;const r=RE+h;const vc=Math.sqrt(MU/r);
@@ -919,7 +919,7 @@ addEventListener('deviceorientation',e=>{if(!gyro.on||e.beta==null)return;const 
  if(gyro.cal){gyro.b0=pitch;gyro.g0=roll;gyro.cal=false;}gyro.x=clamp((roll-gyro.g0)/25,-1,1);gyro.y=clamp(-(pitch-gyro.b0)/20,-1,1);if(Math.abs(gyro.x)<0.08)gyro.x=0;if(Math.abs(gyro.y)<0.08)gyro.y=0;});
 function cycleWeapon(){if(!player)return;if(player.os){const vs=['ship',...(rec.booster?['booster']:[])];if(rec.shipDS)vs[0]='shipDS';if(vs.length>1||player.view!==vs[0]){const i=vs.indexOf(player.view);player.view=vs[(i+1)%vs.length];msg('VIEW: '+({ship:'UPPER STAGE',booster:'BOOSTER',shipDS:'STARSHIP'})[player.view],1);updateCtxLabel();return;}toggleAuto();return;}if(!player.weapons.length)return;player.wi=(player.wi+1)%player.weapons.length;msg(player.weapons[player.wi],0.8);updateCtxLabel();}
 function cycleCam(){if(camFollow){camFollow=null;return;}if(blastCam){blastCam=null;return;}camMode=(camMode+1)%2;}
-function cycleWarp(){if(!player||!player.os){return;}const os=player.os;const dv=player.view!=='ship'&&rec[player.view]?rec[player.view].ds:null;const lv=dv?(dv.h>20000&&dv.thr===0?[1,2,4,10,50]:[1,2,4]):os.h>70000&&!os.engine?[1,10,100,1000]:[1,2,4];const i=lv.indexOf(warp);warp=lv[(i+1)%lv.length]||1;msg('TIME WARP x'+warp,1);}
+function cycleWarp(){if(!player||!player.os){return;}const os=player.os;const dv=player.view!=='ship'&&rec[player.view]?rec[player.view].ds:null;const lv=dv?(dv.h>20000&&dv.thr===0?[1,2,4,10,50]:[1,2,4]):os.h>70000&&!os.engine?[1,10,100,1000]:[1];const i=lv.indexOf(warp);warp=lv[(i+1)%lv.length]||1;msg('TIME WARP x'+warp,1);}
 function toggleAuto(){const os=player.os;os.auto=!os.auto;msg(os.auto?'AUTOPILOT: GRAVITY TURN ON':'MANUAL CONTROL\nStick = pitch, slider = throttle',1.8);if(!os.auto){os.cmdPitch=os.pitch;}updateCtxLabel();}
 function ctxAction(){if(!player)return;const c=player.def.cls;
  if(c==='sub'){player.depthT=player.depthT>5?0:60;msg(player.depthT?'DIVE! DIVE! → 60 m':'SURFACING',1.5);}
@@ -982,7 +982,7 @@ function updRocket(v,dt){const os=v.os;
  if(!rec.shipDS)for(let i=0;i<n;i++){OM.step(os,hs);while(os.events.length){const e=os.events.shift();rocketMsgQ.push(e);
   if(e.includes('SEPARATION')){if(!startBooster(v))spawnDebris('s1',os);shake=Math.max(shake,0.5);for(let k=0;k<30;k++)oFire.spawn(oRocket.position,rnd(0.05),rnd(0.05),rnd(0.05),0.6,0.02,0.05,1,0.8,0.5,1);}if(e==='FAIRING JETTISON'&&os.cfg.fairing)spawnDebris('fair',os);if(e==='ORBIT ACHIEVED'){warp=1;}}
   if(os.crashed)break;}
- if(warp>4&&(os.engine||os.retro))warp=1;
+ if(warp>1&&(os.engine||os.retro||!os.launched))warp=1;/*#27 no time compression under power*/
  if(os.retro&&os.peri<50000){os.retro=false;rocketMsgQ.push('DEORBIT BURN COMPLETE - coast to entry (use WARP)');}
  if(os.kind==='starship'&&!rec.shipDS&&os.stage===1&&os.orbit&&os.peri<100000&&os.h<120000&&os.vs<0)startShipDescent(v);
  updRecovery(v,sim);
@@ -2010,7 +2010,7 @@ const R3=(()=>{const T=THREE;const cv=(w,h)=>{const c=document.createElement('ca
  let last=performance.now();const loop=t=>{const dt=Math.min(0.05,(t-last)/1000);last=t;if(tgt!=null){inp.throttle+=(tgt-inp.throttle)*(1-Math.exp(-dt*9));if(Math.abs(tgt-inp.throttle)<0.002){inp.throttle=tgt;if(tid===null)tgt=null;}const f=$('thrf');if(f)f.style.height=(inp.throttle*100)+'%';}requestAnimationFrame(loop);};requestAnimationFrame(loop);
  window.__touch={zone:Z};}
 // ===== v4 fully player-flown ICBM: manual boost (3 stages, throttle, staging), post-boost bus with manual RV release, RV terminal steering =====
-const ICBM_ST=[{t:62,a:30},{t:56,a:36},{t:48,a:44}];const BUS_DV=320;
+const ICBM_ST=[{t:61,a:30},{t:66,a:32},{t:61,a:36}];/*#27 Minuteman III burn times*/const BUS_DV=320;
 const _icbmU=updBallistic;const _t2=new THREE.Vector3(),_ax=new THREE.Vector3(),_up=new THREE.Vector3(0,1,0);
 function icbmPredict(o){const p=o.pos,v=o.vel;const h=p.y-groundAt(p.x,p.z).h;const T=(v.y+Math.sqrt(Math.max(0,v.y*v.y+2*G*Math.max(h,0))))/G;return {pt:V3(p.x+v.x*T,0,p.z+v.z*T),T,apo:p.y+Math.max(0,v.y)**2/(2*G)};}
 function icbmRelease(o){if(!o.bus||o.bus.n>=8)return null;const i=o.bus.n++;const p=o.pos.clone();const a=i/8*Math.PI*2;const vel=o.vel.clone().add(V3(Math.cos(a)*1.5,-0.5,Math.sin(a)*1.5));
@@ -4079,7 +4079,7 @@ function shHUD(){const S=SHS;const t=S.t;const mt=(t<0?'T-':'T+')+fmtT(Math.abs(
 {const _fw=fireWeapon;fireWeapon=function(v){if(v&&v.kind==='shuttle'){if(SHS)shAction();return false;}return _fw(v);};}
 {const _tk=tick;tick=function(dt){_tk(dt);if(!SHS||!player||player.kind!=='shuttle')return;const S=SHS;
  if(S.ph==='lost'){S.lostT-=dt;if(S.lostT<=0)spawn('shuttle');return;}
- const n=Math.max(1,S.warp|0);for(let i=0;i<n;i++){shStep(dt,i===n-1);if(!SHS||S.ph==='lost')break;shDebris(dt,i===n-1);}
+ if(S.ph==='ascent'||S.ph==='count'||S.ph==='hold'||S.ph==='meco')S.warp=1;/*#27*/const n=Math.max(1,S.warp|0);for(let i=0;i<n;i++){shStep(dt,i===n-1);if(!SHS||S.ph==='lost')break;shDebris(dt,i===n-1);}
  if(SHS&&S.ph!=='lost'){if(SH.orb.parent!==SH.stack){SH.orb.position.copy(S.pos);if(S.oq)SH.orb.quaternion.copy(S.oq);}const [F]=shFocus();player.mesh.position.copy(F);shFX(dt);}};}
 {const _uc=updCamera;updCamera=function(dt){if(SHS&&player&&player.kind==='shuttle'){shCamera(dt);return;}_uc(dt);};}
 {const _ue=updEnv;let hT=0;updEnv=function(dt=0.016){_ue(dt);if(!SHS||!player||player.kind!=='shuttle')return;hT-=dt;if(hT<=0){hT=0.1;shHUD();}
@@ -6806,7 +6806,7 @@ const _r=renderRocketCam;renderRocketCam=function(v,dt){_r(v,dt);
 // The live model is clipped at the live stage's aft station and slid so that tail sits on the projectile origin (where the plume spawns). =====
 (()=>{const T=THREE,S=window.__gicbmstage;if(!S||!window.MSL_MODELS)return;renderer.localClippingEnabled=true;
  const ST=[0,7.5,11.3,13.9];const COAST=2.6;
- const AUTO_BURN=[48,44,40];// game s (real M55A1 ~61 s, SR19 ~66 s, SR73 ~60 s, ~0.7x)
+ const AUTO_BURN=[61,66,61];// game s (real M55A1 ~61 s, SR19 ~66 s, SR73 ~60 s, ~0.7x)
  const _n=new T.Vector3(),_a=new T.Vector3(),_q=new T.Quaternion();const live=new Set(),segs=[];
  const own=(root,pl)=>root.traverse(c=>{if(c.material){const f=x=>{x=x.clone();x.clippingPlanes=pl;return x;};c.material=Array.isArray(c.material)?c.material.map(f):f(c.material);}});
  const axis=(w)=>{w.updateMatrixWorld(true);_n.set(0,1,0).applyQuaternion(w.getWorldQuaternion(_q));w.getWorldPosition(_a);};
@@ -6852,7 +6852,7 @@ const _r=renderRocketCam;renderRocketCam=function(v,dt){_r(v,dt);
  // real-time around staging events: the follow cam normally warps ballistic flight 5x, which made every sep look instant.
  let slowT=0;const near=o=>{if(o.done)return false;if(o.man)return o.phase==='boost'&&(o.coastT>0||o.burn>ICBM_ST[o.stg].t-1.5);const g=o.gs;return !!g&&(g.coast>0||(g.stg<2&&o.t>g.cut[g.stg]-1.5)||(!g.bus&&o.t>o.boostT-1.5&&o.t<o.boostT+1));};
  const baseTS=()=>(camFollow&&camFollow.type==='ballistic'?5:1);
- window.__gmsl2TS=()=>{const b=baseTS();if(b===1)return 1;if(simT<slowT)return 1;const o=camFollow;if(o&&(near(o)||segs.some(s=>s.d&&s.d.t<2.5)))return 1;return b;};
+ window.__gmsl2TS=()=>{const b=baseTS();if(b===1)return 1;{const o=camFollow;if(o&&!o.done&&(o.man?o.phase==='boost':(o.gs&&!o.gs.bus&&o.t<(o.boostT||0)+1)))return 1;}/*#27 real time through boost+staging*/if(simT<slowT)return 1;const o=camFollow;if(o&&(near(o)||segs.some(s=>s.d&&s.d.t<2.5)))return 1;return b;};
  const _sep=sep;sep=function(o,i,d){slowT=simT+3;return _sep(o,i,d);};
  window.__gstaging={live,segs,T,COAST,AUTO_BURN};})();
 // ===== MSL_SM3 (msl builder): RIM-161 SM-3 Block IIA, ship-launched exo-atmospheric hit-to-kill interceptor from the Arleigh Burke forward Mk 41 VLS.
@@ -8404,7 +8404,7 @@ const RED_FORCE=(()=>{const T=THREE,PI=Math.PI;if(typeof scene==='undefined'||ty
   scene.add(m);const u={kind:'jet',k,mesh:m,hp:1,hp0:1,st:'ok',pos:V3(GC.x+rnd(4000),1500+Math.random()*1500,GC.z+rnd(4000)),vel:V3(240,0,0),gunT:0,aamT:6+i*3,cmT:15+i*5,resp:0};m.position.copy(u.pos);u.t=proxy('drone',u);E.push(u);}
  for(let i=0;i<CAP.ships;i++)mkShip(i);for(let i=0;i<CAP.subs;i++)mkSub(i);for(let i=0;i<CAP.jets;i++)mkJet(i);
  // ---------- enemy weapons (own list; flares decoy AAMs) ----------
- const W=[];const allowed=(u,w)=>ENEMY_RULES[u.kind].includes(w);
+ const W=[];const allowed=(u,w)=>ENEMY_RULES[u.kind].includes(w);window.__rfW=()=>({W,fireW:(w,f,t)=>fireW(E.find(u=>u.kind==='ship'),w,f,t)});
  function fireW(u,w,from,aim){if(!allowed(u,w))return;// rule gate: anything else is impossible by construction
   const spec={cruise:{spd:260,turn:0.5,life:60,dmg:45,col:0x8a8f86,l:6,r:0.3,alt:22},aam:{spd:780,turn:2.2,life:18,dmg:34,col:0xdddddd,l:3.8,r:0.12},torpedo:{spd:28,turn:0.25,life:150,dmg:60,col:0x223322,l:6,r:0.27,uw:true}}[w];
   const mesh=missileMesh(spec.l,spec.r,spec.col);mesh.position.copy(from);scene.add(mesh);const d=aim.clone().sub(from).normalize();if(w==='cruise')d.y=Math.max(d.y,0.6);
@@ -8412,14 +8412,14 @@ const RED_FORCE=(()=>{const T=THREE,PI=Math.PI;if(typeof scene==='undefined'||ty
   msg(w==='torpedo'?'⚠ TORPEDO IN THE WATER':w==='aam'?'⚠ MISSILE LOCK - FLARES':'⚠ ANTI-SHIP MISSILE INBOUND',1.8);}
  function updW(dt){const pp=player&&player.mesh?player.mesh.position:null;for(let i=W.length-1;i>=0;i--){const e=W[i];e.t+=dt;e.life-=dt;let goal=pp&&player.alive?pp.clone():null;
   if(e.w==='aam'&&!e.decoy&&EAD.flareT>0&&goal&&e.pos.distanceTo(goal)<3500&&Math.random()<0.8){e.decoy=goal.clone().add(V3(rnd(90),-70,rnd(90)));msg('MISSILE DECOYED',1);}
-  if(e.decoy)goal=e.decoy;if(goal){if(e.w==='cruise'&&e.t>3&&goal.distanceTo(e.pos)>1500)goal.y=Math.max(goal.y,e.alt);if(e.uw)goal.y=Math.min(goal.y,-6);
+  if(e.decoy)goal=e.decoy;if(goal){if(e.w==='cruise'&&e.t>3&&goal.distanceTo(e.pos)>1500)goal.y=Math.max(goal.y,e.alt);if(e.uw)goal.y=Math.min(goal.y,-6);else goal.y=Math.max(goal.y,0.5);/*#26 ASM never dives*/
    const dir=e.vel.clone().normalize(),want=goal.sub(e.pos).normalize();const ang=dir.angleTo(want);if(ang>1e-4)dir.lerp(want,Math.min(1,e.turn*dt/ang)).normalize();const sp=Math.min(e.spd,e.vel.length()+e.spd*0.6*dt);e.vel.copy(dir).multiplyScalar(sp);}
   e.pos.addScaledVector(e.vel,dt);if(e.uw)e.pos.y=Math.min(e.pos.y,-4);e.mesh.position.copy(e.pos);e.mesh.lookAt(_t.copy(e.pos).sub(e.vel));
   if(!e.uw&&Math.random()<0.7)smoke.spawn(_t.copy(e.pos).addScaledVector(e.vel,-0.012),rnd(1),rnd(1),rnd(1),1.5,2,3,0.9,0.9,0.9,0.5);
-  let dead=e.life<=0||(e.decoy&&e.pos.distanceTo(e.decoy)<25)||(!e.uw&&e.pos.y<terrainH(e.pos.x,e.pos.z)&&e.t>2);
+  let dead=e.life<=0||(e.decoy&&e.pos.distanceTo(e.decoy)<25)||(!e.uw&&e.pos.y<terrainH(e.pos.x,e.pos.z)&&e.t>2);if(!e.uw&&e.pos.y<=0.3&&e.t>1){e.pos.y=0.3;dead=true;try{splash(e.pos,3);}catch(_){}}/*#26 surface detonation*/
   // player can shoot them down with guns/missiles
   for(const o of projs){if(o.done||!o.pos||o.owner!==player)continue;if(o.pos.distanceToSquared(e.pos)<(o.type==='bullet'?60:400)){dead=true;o.done=true;score+=50;msg('+50 MISSILE KILLED',1);break;}}
-  if(!e.decoy&&pp&&player.alive&&e.pos.distanceTo(pp)<(e.w==='aam'?18:(player.def.cls==='ship'?40:22))){eadHit(e.dmg,e.w==='torpedo'?'TORPEDO HIT':e.w==='aam'?'MISSILE HIT':'ANTI-SHIP MISSILE HIT');dead=true;}
+  const subDeep=player&&player.def&&player.def.cls==='sub'&&pp&&pp.y<-18;if(!e.padKill&&!e.decoy&&pp&&player.alive&&!(subDeep&&!e.uw)&&e.pos.distanceTo(pp)<(e.w==='aam'?18:(player.def.cls==='ship'?40:22))){eadHit(e.dmg,e.w==='torpedo'?'TORPEDO HIT':e.w==='aam'?'MISSILE HIT':'ANTI-SHIP MISSILE HIT');dead=true;}
   if(dead){explosion(e.pos,e.uw?2:1.3);scene.remove(e.mesh);W.splice(i,1);}}}
  // ---------- damage / sinking (wraps killTarget so ships take several hits) ----------
  {const _k=killTarget;killTarget=function(t,big){if(t&&t.ext){hitUnit(t.u,big?2:1);return;}return _k(t,big);};}
@@ -8429,7 +8429,34 @@ const RED_FORCE=(()=>{const T=THREE,PI=Math.PI;if(typeof scene==='undefined'||ty
   if(u.hp<=0){u.st='dead';u.t.alive=false;u.sinkT=0;const pts={ship:u.k==='boat'?150:400,sub:450,jet:250}[u.kind];score+=pts;msg('+'+pts+' ENEMY '+(u.kind==='jet'?'FIGHTER DOWN':u.kind==='sub'?'SUB KILLED':'WARSHIP SUNK'),2);}}
  const fightOn=()=>player&&player.mesh&&player.alive&&!mission&&settings.enemies!==false;
  let clock=0;
- function tickAll(dt){clock+=dt;const pp=player&&player.mesh?player.mesh.position:V3();const pc=player&&player.def?player.def.cls:'';const air=pc==='air'||pc==='heli';const sea=pc==='ship'||pc==='sub';
+ // ---------- #28 player ship/sub layered air defense (automatic, no buttons) ----------
+ const ADF={I:[],vls:0,ciwsT:0,ramT:0,samT:0,kills:0};window.__adf=ADF;
+ function padTick(dt){if(!player||!player.mesh||!player.alive||!player.def)return;const c=player.def.cls,P=player.mesh.position;
+  const ship=c==='ship',sub=c==='sub'&&P.y>-18;ADF.vls-=dt;ADF.ramT-=dt;ADF.samT-=dt;
+  const launch=(tgt,kind)=>{const o=P.clone().add(V3(0,sub?6:14,0));const mesh=missileMesh(kind==='sam'?1.6:4.2,kind==='sam'?0.07:0.17,0xeeeeee);mesh.position.copy(o);scene.add(mesh);
+   ADF.I.push({tgt,kind,pos:o,vel:V3(0,kind==='ram'?300:200,0),spd:kind==='sm2'?1100:kind==='ram'?700:650,mesh,life:kind==='sm2'?40:14});try{sfx('missile',0.25);}catch(e){}};
+  const claimed=t=>ADF.I.some(i=>i.tgt===t);
+  if(ship||sub){
+   // threats: enemy missiles (ship only) + aircraft
+   for(const e of W){if(e.uw||claimed(e))continue;const d=e.pos.distanceTo(P);
+    if(sub){if(e.u!==player&&d<4500&&d>400&&ADF.samT<=0){ADF.samT=3;launch(e,'sam');msg('IDAS AWAY',0.8);}continue;}
+    if(d<30000&&d>2500&&ADF.vls<=0){ADF.vls=1.2;launch(e,d>12000?'sm2':'essm');msg(d>12000?'SM-2 AWAY':'ESSM AWAY',0.8);}
+    else if(d<=2500&&d>600&&ADF.ramT<=0){ADF.ramT=1.5;launch(e,'ram');msg('RAM AWAY',0.8);}}
+   for(const u of E){if(u.kind!=='jet'||u.st!=='ok'||claimed(u))continue;const d=u.pos.distanceTo(P);
+    if(ship&&d<25000&&ADF.vls<=0){ADF.vls=2;launch(u,'sm2');msg('SM-2 AWAY',0.8);}
+    else if(sub&&d<5000&&u.pos.y<4000&&ADF.samT<=0){ADF.samT=6;launch(u,'sam');msg('IDAS AWAY',0.8);}}
+   // Phalanx CIWS: last-ditch vs missiles inside 1.8 km
+   if(ship){let near=null,nd=1800;for(const e of W){if(e.uw)continue;const d=e.pos.distanceTo(P);if(d<nd){nd=d;near=e;}}
+    if(near){ADF.ciwsT-=dt;if(ADF.ciwsT<=0){ADF.ciwsT=0.06;const o=P.clone().add(V3(0,18,0));const dd=near.pos.clone().sub(o);const L=dd.length();dd.normalize();
+     for(let k=0;k<2;k++)fire.spawn(_t.copy(o).addScaledVector(dd,L*Math.random()).add(V3(rnd(4),rnd(4),rnd(4))),dd.x*900,dd.y*900,dd.z*900,0.25,0.8,0,1,0.85,0.3,1);
+     if(Math.random()<dt*(nd<900?2.2:1.1)){near.life=0;near.padKill=true;ADF.kills++;msg('CIWS SPLASH',1);}}}}}
+  for(let i=ADF.I.length-1;i>=0;i--){const m=ADF.I[i];m.life-=dt;const t=m.tgt;const alive=W.includes(t)||(t.kind==='jet'&&t.st==='ok');const tp=t.pos;let dead=m.life<=0||!alive;
+   if(!dead){const want=tp.clone().sub(m.pos).normalize(),dir=m.vel.clone().normalize();const ang=dir.angleTo(want);if(ang>1e-4)dir.lerp(want,Math.min(1,4*dt/ang)).normalize();
+    m.vel.copy(dir).multiplyScalar(Math.min(m.spd,m.vel.length()+m.spd*dt));m.pos.addScaledVector(m.vel,dt);m.mesh.position.copy(m.pos);m.mesh.lookAt(_t.copy(m.pos).sub(m.vel));
+    if(Math.random()<0.6)smoke.spawn(_t.copy(m.pos),rnd(1),rnd(1),rnd(1),1.2,1.5,2.5,0.9,0.9,0.9,0.4);
+    if(m.pos.distanceTo(tp)<30){dead=true;ADF.kills++;if(W.includes(t)){t.life=0;t.padKill=true;msg('INTERCEPT - SPLASH ONE',1);}else{hitUnit(t,1);}}}
+   if(dead){explosion(m.pos,0.8);scene.remove(m.mesh);ADF.I.splice(i,1);}}}
+ function tickAll(dt){clock+=dt;try{padTick(dt);}catch(e){console.warn('pad',e);}const pp=player&&player.mesh?player.mesh.position:V3();const pc=player&&player.def?player.def.cls:'';const air=pc==='air'||pc==='heli';const sea=pc==='ship'||pc==='sub';
   for(const u of E){const m=u.mesh;
    if(u.kind!=='jet'){// ---- surface & sub movement + sinking ----
     if(u.st==='ok'){const dx=-Math.sin(u.hdg),dz=-Math.cos(u.hdg);if(!wetAt(m.position.x+dx*400,m.position.z+dz*400))u.hdg+=dt*0.5;else{u.hdg+=Math.sin(clock*0.05+u.L)*0.01*dt;m.position.x+=dx*u.spd*dt;m.position.z+=dz*u.spd*dt;}
@@ -8438,9 +8465,9 @@ const RED_FORCE=(()=>{const T=THREE,PI=Math.PI;if(typeof scene==='undefined'||ty
      for(const o of projs){if(o.done||!o.pos||o.owner!==player||o.type==='bullet'||o.pos.y>16)continue;const d=m.worldToLocal(o.pos.clone());if(Math.abs(d.x)<u.B*0.6+2&&Math.abs(d.z)<u.L*0.5+2&&d.y>-20){o.done=true;o.life=0;if(o.mesh)o.mesh.visible=false;hitUnit(u,o.type==='torpedo'?3:2);break;}}
      if(fightOn()){const d=m.position.distanceTo(pp);u.rl-=dt;
       if(u.kind==='ship'&&u.k!=='boat'){// anti-ship cruise missile vs ships/low air, CIWS vs close aircraft
-       if(u.rl<=0&&d<14000&&(sea||(air&&pp.y<600))&&W.filter(w=>w.u===u).length<1){u.rl=22+Math.random()*12;fireW(u,'cruise',m.position.clone().add(V3(0,12,0)),pp);}
+       if(u.rl<=0&&d<14000&&((sea&&!(pc==='sub'&&pp.y<-18))||(air&&pp.y<600))&&W.filter(w=>w.u===u).length<1){u.rl=22+Math.random()*12;fireW(u,'cruise',m.position.clone().add(V3(0,12,0)),pp);}
        if(air&&d<3200&&pp.y<3500){u.ciwsT-=dt;if(u.ciwsT<=0){u.ciwsT=0.1;const o=m.position.clone().add(V3(0,14,0));const dd=pp.clone().sub(o);const Ld=dd.length();dd.normalize();for(let k=0;k<2;k++)fire.spawn(_t.copy(o).addScaledVector(dd,Ld*(0.2+Math.random()*0.8)).add(V3(rnd(40),rnd(40),rnd(40))),dd.x*500,dd.y*500,dd.z*500,0.3,1,0,1,0.85,0.3,1);if(Math.random()<0.012)eadHit(3,'CIWS FIRE');}}}
-      if(u.kind==='sub'&&u.rl<=0&&d<9000&&W.filter(w=>w.u===u).length<1){u.rl=30+Math.random()*15;if(sea&&d<5000)fireW(u,'torpedo',m.position.clone().add(V3(0,-2,0)),pp);else if(sea||(air&&pp.y<500))fireW(u,'cruise',m.position.clone().setY(2),pp);}}}
+      if(u.kind==='sub'&&u.rl<=0&&d<9000&&W.filter(w=>w.u===u).length<1){u.rl=30+Math.random()*15;if(sea&&d<5000)fireW(u,'torpedo',m.position.clone().add(V3(0,-2,0)),pp);else if((sea&&!(pc==='sub'&&pp.y<-18))||(air&&pp.y<500))fireW(u,'cruise',m.position.clone().setY(2),pp);}}}
     else{u.sinkT+=dt;const k=Math.min(1,u.sinkT/20);m.rotation.z=0.4*k*k;m.rotation.x=0.1*k;m.position.y-=dt*(u.kind==='sub'?4:1.4*k);if(u.kind!=='sub'&&Math.random()<dt*6)smoke.spawn(V3(m.position.x+rnd(u.L*.3),3,m.position.z+rnd(u.L*.3)),rnd(2),6,rnd(2),6,10,8,.15,.14,.13,.6,0,.1);
      if(u.sinkT>45){u.st='ok';u.hp=u.hp0;u.t.alive=true;m.rotation.set(0,0,0);const p=findWater(GC.x,GC.z,0,7000);if(p)m.position.copy(p);}}
     u.t.pos.copy(m.position);if(u.kind==='sub')u.t.pos.y=Math.max(u.t.pos.y,-3);u.t.mesh=m;m.visible=true;continue;}
