@@ -162,7 +162,7 @@ float a=(0.10+0.75*rim+0.8*spec)*vA;vec3 col=mix(vec3(0.80,0.95,1.0),fogC,vF*0.8
   bubble(_bv.set(o.pos.x+Math.cos(a)*r,o.pos.y-Math.random()*12,o.pos.z+Math.sin(a)*r),Math.cos(a)*1.5,1+Math.random()*3,Math.sin(a)*1.5,2.5+Math.random()*4,0.15+Math.pow(Math.random(),2.5)*2.4,0.85);}}
  // breach: white water column + spray + gas/steam cloud (refs/subx/launch/trident_breach_2019.jpg)
  function breachFx(p){const q=_bv.copy(p).setY(0.5);
-  for(let i=0;i<160;i++){const a=Math.random()*6.28,r=Math.random()*9;smoke.spawn(_sv.set(q.x+Math.cos(a)*r,0.5+Math.random()*8,q.z+Math.sin(a)*r),Math.cos(a)*(2+Math.random()*7),4+Math.random()*14,Math.sin(a)*(2+Math.random()*7),6+Math.random()*5,8+Math.random()*10,5+Math.random()*5,0.93,0.94,0.95,0.9,0.6,0.6,0.88,0.89,0.9);}
+  for(let i=0;i<220;i++){const a=Math.random()*6.28,r=Math.pow(Math.random(),0.55)*28;smoke.spawn(_sv.set(q.x+Math.cos(a)*r,0.4+Math.random()*6,q.z+Math.sin(a)*r),Math.cos(a)*(2+Math.random()*9),3+Math.random()*10,Math.sin(a)*(2+Math.random()*9),8+Math.random()*8,10+Math.random()*14,6+Math.random()*6,0.93,0.94,0.95,0.92,0.55,0.5,0.88,0.89,0.9);}
   for(let i=0;i<260;i++){const a=Math.random()*6.28,h=Math.random();smoke.spawn(_sv.set(q.x+rnd(3),1,q.z+rnd(3)),Math.cos(a)*(3+h*10),18+Math.random()*34,Math.sin(a)*(3+h*10),1.6+Math.random()*1.4,0.5+Math.random()*1.3,0.8,0.96,0.97,1,0.95,0.15,-9.8);}
   for(let i=0;i<130;i++){const a=Math.random()*6.28,r=Math.random()*14,sp=6+Math.random()*10;smoke.spawn(_sv.set(q.x+Math.cos(a)*r,1+Math.random()*5,q.z+Math.sin(a)*r),Math.cos(a)*sp,0.5+Math.random()*2.5,Math.sin(a)*sp,7+Math.random()*4,10+Math.random()*7,4+Math.random()*3,0.95,0.95,0.96,0.85,0.5,0.1,0.87,0.88,0.89);}// wide low skirt (Trident photo)
   for(let i=0;i<48;i++){const a=i/48*6.28;smoke.spawn(_sv.set(q.x+Math.cos(a)*4,0.6,q.z+Math.sin(a)*4),Math.cos(a)*9,0.6,Math.sin(a)*9,4,3,3,0.95,0.97,1,0.8,0.8,0);}}
@@ -200,7 +200,8 @@ float a=(0.10+0.75*rim+0.8*spec)*vA;vec3 col=mix(vec3(0.80,0.95,1.0),fogC,vF*0.8
     const ring=new T.Mesh(new T.TorusGeometry(r+0.04,0.05,6,40).rotateX(Math.PI/2),lipM);ring.position.set(piv.position.x,top+0.005,piv.position.z+r);P.add(ring);
     const barrel=new T.Mesh(new T.CylinderGeometry(0.16,0.16,r*1.1,12).rotateZ(Math.PI/2),lipM);barrel.position.set(piv.position.x,top+0.05,piv.position.z-0.05);P.add(barrel);
     const wall=new T.Mesh(new T.CylinderGeometry(r*0.96,r*0.96,3,28,1,true),new T.MeshStandardMaterial({color:0x111214,roughness:0.7,metalness:0.4,side:T.BackSide}));wall.position.set(piv.position.x,top-1.5,piv.position.z+r);P.add(wall);
-    const mem=new T.Mesh(new T.SphereGeometry(r*0.95,28,10,0,Math.PI*2,0,0.55),new T.MeshStandardMaterial({color:0xd8d2c0,roughness:0.55,metalness:0}));mem.scale.y=0.45;mem.position.set(piv.position.x,top-0.9,piv.position.z+r);P.add(mem);hm.userData.mem=mem;}}
+    const mem=new T.Mesh(new T.SphereGeometry(r*0.98,28,12,0,Math.PI*2,0,0.62),new T.MeshStandardMaterial({color:0xf2e2b8,roughness:0.42,metalness:0.05,emissive:0x3a2a10,emissiveIntensity:0.35}));mem.scale.y=0.55;mem.position.set(piv.position.x,top-0.55,piv.position.z+r);P.add(mem);
+    const seal=new T.Mesh(new T.RingGeometry(r*0.15,r*0.92,28),new T.MeshStandardMaterial({color:0x6a5030,roughness:0.6,metalness:0.2,side:T.DoubleSide}));seal.rotation.x=-Math.PI/2;seal.position.set(piv.position.x,top-0.42,piv.position.z+r);P.add(seal);hm.userData.mem=mem;}}
   m.userData.hatches=hatches;}
  function hatchFor(v,tube){const H=v.mesh.userData.hatches;if(!H||!H.length)return null;let best=null,bd=1e9;const w=new T.Vector3();for(const h of H){if(h.userData.open)continue;h.getWorldPosition(w);const d=w.distanceTo(tube);if(d<bd){bd=d;best=h;}}return best;}
  const opening=[];

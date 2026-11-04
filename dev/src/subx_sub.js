@@ -15,7 +15,7 @@
     for(int i=0;i<24;i++){vec4 h=uSXh[i];if(h.w>.5&&gp.y>4.6&&length(gp.xz-h.xz)<.93)discard;}
     float ang=atan(gp.x,gp.y)*5.1;vec2 tc=vec2(ang/.62,gp.z/.62);tc.x+=mod(floor(tc.y),2.)*.5;vec2 tf=fract(tc);
     float seam=smoothstep(0.,.05,min(tf.x,1.-tf.x))*smoothstep(0.,.05,min(tf.y,1.-tf.y));float th=sxH(floor(tc));
-    vec3 tile=vec3(.040,.043,.046)*(.82+.36*th);
+    vec3 tile=vec3(.055,.062,.070)*(.45+1.15*th);
     if(th>.993)tile=vec3(.10,.09,.08);           // missing tile: bare primer
     float sc=sxN(vec2(gp.z*1.7,floor(ang*1.5)))*sxN(vec2(gp.z*.3,gp.y*.6));
     float salt=smoothstep(.55,.9,sxN(gp.zx*vec2(.25,2.)+3.))*smoothstep(1.,3.5,gp.y)*(1.-smoothstep(4.8,5.3,gp.y));

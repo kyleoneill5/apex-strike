@@ -46,6 +46,18 @@ try{Object.defineProperty(window,'scene',{configurable:true,get(){return scene;}
 try{Object.defineProperty(window,'camFollow',{configurable:true,get(){return camFollow;},set(v){camFollow=v;}});}catch(e){}
 try{Object.defineProperty(window,'fireWeapon',{configurable:true,get(){return fireWeapon;}});}catch(e){}
 try{window.setPaused=setPaused;}catch(e){}
+try{const _uc=updCamera;updCamera=function(dt){_uc(dt);const S=window.__shotCam;if(S&&S.p&&S.at){camera.up.set(0,1,0);camera.position.set(S.p[0],S.p[1],S.p[2]);camera.lookAt(S.at[0],S.at[1],S.at[2]);return;}
+ // Third-person follow: sit aft-quarter of the tail so the nozzle stays in frame beside the plume.
+ const o=camFollow;if(o&&o.pos&&!o.done&&!o.rv&&(o.type==='ballistic'||o.type==='sm3')){const d=(o.vel&&o.vel.lengthSq()>4)?o.vel.clone().normalize():((o.dir&&o.dir.lengthSq()>0.2)?o.dir.clone().normalize():new THREE.Vector3(0,1,0));
+  const side=new THREE.Vector3(-d.z,0,d.x);if(side.lengthSq()<1e-4)side.set(1,0,0);side.normalize();const alt=Math.max(0,o.pos.y);
+  const len=o.type==='sm3'?7:(o.gs&&o.gs.stg?11:16);const dist=Math.max(10,len*0.85)+Math.min(14,alt/2500);
+  const coasting=(o.gs&&o.gs.coast>0)||(o.type==='sm3'&&o.coast>0);
+  camera.up.set(0,1,0);camera.fov=48;camera.updateProjectionMatrix();
+  camera.position.copy(o.pos).addScaledVector(d,-dist*0.42).addScaledVector(side,dist*0.95).add(new THREE.Vector3(0,dist*0.02,0));
+  camera.lookAt(o.pos.clone().addScaledVector(d,coasting?-2.4:len*0.16));}
+ else if(player&&player.def&&player.def.cls==='rocket'&&player.os&&player.os.launched&&player.os.engine&&typeof padRocket!=='undefined'&&padRocket){const h=Math.max(0,player.os.h);const up=new THREE.Vector3(0,1,0).applyQuaternion(padRocket.quaternion);const base=padRocket.position.clone();
+  const dist=36+Math.min(40,h/500);const side=new THREE.Vector3(-0.9,0.06,0.35).normalize();camera.up.set(0,1,0);camera.position.copy(base).addScaledVector(side,dist).addScaledVector(up,2);camera.lookAt(base.clone().addScaledVector(up,8));}
+};}catch(e){}
 function reg(){if(!window.__mwMenu)return false;__mwMenu.add('mwMP','Multiplayer',open);if(window.__mod)__mwMenu.add('mwMod','Mod menu',()=>__mod.open(),{ownerOnly:true});return true;}
 if(!reg()){let n=0;const t=setInterval(()=>{if(reg()||++n>40)clearInterval(t);},250);}
 }

@@ -89,6 +89,14 @@ def common(s):
          "if(st.prop<=rsv){if(s.stage>=s.stages.length-1)s.engine=false;s.events.push(s.stage===0?'MECO - STAGE 1 DEPLETED':'SECO - FUEL DEPLETED');}"),
         ("if(s.auto&&s.launched&&s.engine)guide(s,h,q);",
          "if(s.auto&&s.launched&&s.engine)guide(s,h,q);if(!s.auto&&s.launched&&s.stage<s.stages.length-1){const stM=s.stages[s.stage];if(stM&&stM.prop<=(stM.reserve||0)){if(!s._mSep)s._mSep=s.t;if(s.t-s._mSep>2){stageSep(s);s._mSep=0;s.engine=true;}}}"),
+        ("origin = 32N 83W (Warner Robins, GA)",
+         "origin = 32N 83W (Warner Robins, GA)\nW.coast=US;"),
+        # SM-3 plume starts aft of the nozzle bell so the engine stays visible
+        ("const b=_v.copy(o.pos).addScaledVector(o.dir,-0.4-k*1.2);fire.spawn(b,",
+         "const b=_v.copy(o.pos).addScaledVector(o.dir,-1.15-k*1.2);fire.spawn(b,"),
+        # Horizon limb: thin white-cyan edge over a deeper blue airglow
+        ("vec3 col=vec3(0.22,0.48,1.0)*dens*1.6*(1.0-hit)+vec3(0.6,0.8,1.0)*exp(-max(alt,0.0)/2.0)*0.6*(1.0-hit);",
+         "vec3 col=vec3(0.05,0.22,0.85)*dens*1.15*(1.0-hit)+vec3(0.75,0.92,1.0)*exp(-max(alt,0.0)/1.15)*0.85*(1.0-hit)+vec3(1.0,0.86,0.62)*exp(-max(alt,0.0)/0.45)*0.35*(1.0-hit)*lit;"),
     ]
     for a, b in ad_fixes:
         if a not in s:
@@ -111,6 +119,7 @@ MERGE_BEFORE = [
     'mp_net.js', 'mp_aim.js', 'mp_save.js', 'mp_mod.js', 'mp_modes.js', 'mp_streak.js',
     # C3: immediately before the baked gnanfix. gsub_ocean.js is not included.
     'gsub.js', 'subx_sub.js',
+    'msl_eng.js', 'coast_vec.js',
 ]
 
 def build_merged():

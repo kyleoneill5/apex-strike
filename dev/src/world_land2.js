@@ -2,9 +2,10 @@
 {const T=THREE,W=window.__world,WL={};window.__wland=WL;
 // tex/us_sat_bmng.jpg (NASA Blue Marble crop) was not in the crew handoff. Set window.__US_SAT
 // to that path once the file is next to the site root; until then vertex colours stay on and we do not 404.
-const SAT_URL=window.__US_SAT||'';
-if(W&&W.mat&&SAT_URL){const sat=new T.TextureLoader().load(SAT_URL,undefined,undefined,()=>console.info('us sat missing'));sat.colorSpace=T.SRGBColorSpace;sat.anisotropy=renderer.capabilities.getMaxAnisotropy();
+const SAT_URL=window.__US_SAT||'tex/us_sat_bmng.jpg';
+if(W&&W.mat&&SAT_URL){const sat=new T.TextureLoader().load(SAT_URL,()=>{sat.colorSpace=T.SRGBColorSpace;sat.anisotropy=renderer.capabilities.getMaxAnisotropy();sat.needsUpdate=true;applySat();},undefined,()=>console.info('us sat missing'));
  const m=W.mat;const U={uSat:{value:sat},uGeo:{value:new T.Vector4(W.L0,W.A0,W.K,W.C)},uEI:{value:new T.Vector3(ENEMY.x,ENEMY.z,5000)}};WL.U=U;
+ function applySat(){
  m.onBeforeCompile=s=>{Object.assign(s.uniforms,U);
   s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
   s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;uniform sampler2D uSat;uniform vec4 uGeo;uniform vec3 uEI;')
@@ -15,6 +16,7 @@ if(W&&W.mat&&SAT_URL){const sat=new T.TextureLoader().load(SAT_URL,undefined,und
    vec3 sand=vec3(0.40,0.36,0.27);vec3 land=mix(sand,sc,sh);land=mix(land,vColor.rgb*1.1,clamp(smoothstep(0.35,0.7,slope)*0.5,0.0,0.5));
    diffuseColor.rgb*=max(mix(land,vColor.rgb,ei),vec3(0.0));}`);};
  m.customProgramCacheKey=()=>'wland2';m.needsUpdate=true;WL.sat=1;}
+}
 // ocean: the 60 km Water square + far ring met in a visible circle at 30 km -> scale both with camera height so the seam sits inside the fog
 WL.seam=()=>{const s=Math.min(12,Math.max(1,camera.position.y/1000));ocean.scale.set(s,1,s);farOcean.visible=s<1.4;};
 // clouds: hide the cotton-puff sprites from altitude, reshape the deck into domain-warped cumulus fields

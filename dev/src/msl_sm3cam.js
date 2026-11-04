@@ -13,8 +13,8 @@
  const _gh=window.gameHook;window.gameHook=function(dt){if(_gh)_gh(dt);
   for(const o of projs){if(o.type!=='sm3'||o._vls)continue;o._vls=true;const H=hatch(o);const start=H.localToWorld(H.userData.cell.clone()).add(new T.Vector3(0,-6.3,0));
    live.push({o,H,start,t:0,open:false});o.pos.copy(start);o.mesh.position.copy(start);}
-  for(const L of live){const o=L.o;if(!o.mesh.userData.plume){const g=new T.Group();const mk=(r,l,c,op)=>{const m=new T.Mesh(new T.ConeGeometry(r,l,20,1,true),new T.MeshBasicMaterial({color:c,transparent:true,opacity:op,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide}));m.position.y=-l/2;m.rotation.x=Math.PI;return m;};
-    g.add(mk(0.2,2.6,0xfff4d8,0.95),mk(0.36,6.5,0xffa040,0.55),mk(0.55,11,0xff7020,0.18));o.mesh.add(g);o.mesh.userData.plume=g;}
+  for(const L of live){const o=L.o;if(!o.mesh.userData.plume){const g=new T.Group();const mk=(r,l,c,op)=>{const m=new T.Mesh(new T.ConeGeometry(r,l,20,1,true),new T.MeshBasicMaterial({color:c,transparent:true,opacity:op,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide}));m.position.y=-l/2;return m;};
+    g.add(mk(0.07,1.5,0xfff4d8,0.95),mk(0.14,3.4,0xffa040,0.5),mk(0.26,6.5,0xff7020,0.16));g.position.y=-0.45;o.mesh.add(g);o.mesh.userData.plume=g;}
    const pl=o.mesh.userData.plume;const on=L.t>=HOLD&&!o.done&&o.ph<4&&!(o.coast>0);pl.visible=on;if(on){const h=o.pos.y,f=1+0.12*Math.sin(L.t*60)+0.06*Math.random();const vac=Math.min(2.2,1+h/30000);pl.scale.set(vac*(o.ph?0.7:1),f*(o.ph?0.8:1)*vac,vac*(o.ph?0.7:1));}}
   for(let i=live.length-1;i>=0;i--){const L=live[i],o=L.o;L.t+=dt;const h=L.H.userData.hinge;if(o.ph!==L.ph){if(L.ph!==undefined&&o.ph<=2)L.sep=L.t;L.ph=o.ph;}
    if(h)h.rotation.z=Math.min(1,L.t/HOLD)*1.95;// lid swings ~110 deg
