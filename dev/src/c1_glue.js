@@ -1,6 +1,16 @@
 // ===== c1_glue.js — C1 (Nov 3): wires MP/save/mod into the MW2 menu (no new HUD buttons; menu rows only), gamer tags, MP air-defense tab hide.
 {
 const $=id=>document.getElementById(id);
+// Weapons fire along local -Z. Stock lookAt was leaving that axis pointed 180° away
+// from the point (guns flew backwards and missed a peer 40 m ahead).
+{const _look=THREE.Object3D.prototype.lookAt;
+ THREE.Object3D.prototype.lookAt=function(x,y,z){if(this.isCamera)return _look.apply(this,arguments);
+  const tgt=x&&x.isVector3?x:new THREE.Vector3(+x,+y,+z);
+  const dir=tgt.clone().sub(this.getWorldPosition(new THREE.Vector3()));
+  if(dir.lengthSq()<1e-8)return this;dir.normalize();
+  const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,-1),dir);
+  if(this.parent){const pq=new THREE.Quaternion();this.parent.getWorldQuaternion(pq);q.premultiply(pq.invert());}
+  this.quaternion.copy(q);return this;};}
 if(window.__mp&&!('active' in __mp))Object.defineProperty(__mp,'active',{get:()=>__mp.state==='on'});
 const reapply=()=>{try{window.__uiCards&&__uiCards.apply();}catch(e){}};
 if(window.__mp&&__mp.onChange)__mp.onChange(reapply);

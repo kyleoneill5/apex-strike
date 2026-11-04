@@ -50,7 +50,7 @@ function remoteFor(id,kind,name){let r=st.remotes.get(id);if(r&&r.kind!==kind){s
  else if(name&&r.name!==name){r.name=name;setTag(r);}return r;}
 function dropRemote(id,why){const r=st.remotes.get(id);if(!r)return;scene.remove(r.mesh);st.remotes.delete(id);if(why&&typeof killFeed==='function')killFeed(r.name+' '+why);emit();}
 // ---- messaging ----
-function sendAll(m,except){for(const [id,c] of st.conns)if(id!==except&&c.open)try{c.send(m)}catch(e){}}
+function sendAll(m,except){for(const [id,c] of st.conns)if(id!==except)try{c.send(m)}catch(e){}}
 function out(m){m.from=m.from||st.me;sendAll(m);} // host: to all; client: only conn is host, host relays
 function onMsg(c,m){if(!m||!m.t)return;if(st.host){m.from=c.peer;if(!hostFilter(c,m))return;sendAll(m,c.peer);}handle(m);}
 // host authority: joiners cannot spawn/fire owner-only items; damage computed here (owner edge)
@@ -67,7 +67,7 @@ function hostFilter(c,m){const own=m.from===st.owner;
 function dmgFor(from,to,w){let d=DMG[w]??40;if(from===st.owner)d*=EDGE.dmgOut;if(to===st.owner)d*=EDGE.dmgIn;return Math.round(d*10)/10;}
 const ons={};function handle(m){const now=performance.now()/1000;for(const f of ons[m.t]||[])try{f(m)}catch(e){console.warn(e)}
  switch(m.t){
- case 's':{const r=remoteFor(m.from,m.k,m.n);r.buf.push({t:now,p:m.p,q:m.q,a:m.a});if(r.buf.length>20)r.buf.shift();r.alive=m.a;r.mesh.visible=m.a;r.lastT=now;if(m.x!==undefined&&window.__mpExtraIn)try{__mpExtraIn(r,m.x)}catch(e){}break;}
+ case 's':{const r=remoteFor(m.from,m.k,m.n);r.buf.push({t:now,p:m.p,q:m.q,a:m.a});if(r.buf.length>8)r.buf.shift();r.alive=m.a;r.mesh.visible=m.a!==false;r.lastT=now;if(m.p&&m.p.length===3)r.mesh.position.set(+m.p[0],+m.p[1],+m.p[2]);if(m.q&&m.q.length===4)r.mesh.quaternion.set(+m.q[0],+m.q[1],+m.q[2],+m.q[3]);if(m.x!==undefined&&window.__mpExtraIn)try{__mpExtraIn(r,m.x)}catch(e){}break;}
  case 'f':{remoteFire(m);break;}
  case 'h':{if(m.to===st.me)takeHit(m);break;}
  case 'k':{const kn=(m.killer===st.owner?'OWNER ':'')+cleanName(nameOf(m.killer),m.killer),vn=cleanName(nameOf(m.victim),m.victim);if(m.killer===st.me){st.kills++;try{if(typeof score!=='undefined')score+=250;}catch(e){}if(typeof hitTick==='function')hitTick(true);}
@@ -94,11 +94,20 @@ function takeHit(m){if(!player||!player.alive||st.hp<=0)return;st.hp-=(+m.d>0&&+
   if(typeof explosion==='function')explosion(p.clone(),1.6);const rs=()=>{if(window.__gm&&!__gm.canRespawn()){setTimeout(rs,1000);return;}st.hp=100;try{if(st.state==='on'&&player)spawn(player.kind);}catch(e){}};setTimeout(rs,3000);}emit();}
 const DMG={SAMSTREAK:60,CRAM:6,GUN:4,CIWS:3,'25MM':5,'40MM':12,'105MM':45,ROCKETS:20,AAM:60,SAM:60,HYPERSONIC:100,TORPEDO:100,GMLRS:80,PRSM:100};
 function hookFire(){if(typeof fireWeapon!=='function'||fireWeapon.__mp)return;const _f=fireWeapon;
- fireWeapon=function(v){const n0=projs.length,r=_f.apply(this,arguments);if(st.state==='on'&&v===player)for(let i=n0;i<projs.length;i++){const o=projs[i];o.__mpw=v.weapons[v.wi];tracked.add(o);
-   if(i===n0)out({t:'f',w:o.__mpw,p:[o.pos.x,o.pos.y,o.pos.z],v:[o.vel.x,o.vel.y,o.vel.z]});}return r;};fireWeapon.__mp=1;}
+ fireWeapon=function(v){const n0=projs.length,r=_f.apply(this,arguments);
+  if(st.state==='on'&&v===player)for(let i=n0;i<projs.length;i++){const o=projs[i];o.__mpw=v.weapons[v.wi];o.__mpP=o.pos.clone();tracked.add(o);
+   if(i===n0)out({t:'f',w:o.__mpw,p:[o.pos.x,o.pos.y,o.pos.z],v:[o.vel.x,o.vel.y,o.vel.z]});
+   if(o.vel&&o.vel.lengthSq()>1){const dir=o.vel.clone().normalize();const far=o.pos.clone().addScaledVector(dir,o.type==='bullet'?250:600);
+    for(const rm of st.remotes.values()){if(!rm.alive)continue;const rd=(DEFS[rm.kind]||{}).cls;const rad=rd==='ship'||rd==='sub'?90:36;
+     const to=rm.mesh.position.clone().sub(player.mesh.position);const dist=to.length();const aimed=o.type==='bullet'&&dist>1&&dist<120&&dir.angleTo(to)<1.0;
+     if(aimed||segDist(player.mesh.position,far,rm.mesh.position)<rad){const w=o.__mpw;if(window.__gm&&!__gm.allowHit(st.me,rm.id))break;const h={t:'h',to:rm.id,w,from:st.me};if(st.host)h.d=dmgFor(st.me,rm.id,w);out(h);o.life=0;tracked.delete(o);break;}}}}
+  return r;};fireWeapon.__mp=1;}
+function segDist(a,b,p){const abx=b.x-a.x,aby=b.y-a.y,abz=b.z-a.z,L2=abx*abx+aby*aby+abz*abz;let t=0;if(L2>1e-4)t=Math.max(0,Math.min(1,((p.x-a.x)*abx+(p.y-a.y)*aby+(p.z-a.z)*abz)/L2));const x=a.x+abx*t-p.x,y=a.y+aby*t-p.y,z=a.z+abz*t-p.z;return Math.sqrt(x*x+y*y+z*z);}
 function checkHits(){for(const o of tracked){if(!projs.includes(o)||o.life<=0){tracked.delete(o);continue;}
- for(const r of st.remotes.values()){if(!r.alive)continue;const d=DEFS[r.kind]||{},rad=(d.cls==='ship'||d.cls==='sub')?70:18;
-  if(o.pos.distanceTo(r.mesh.position)<rad){const w=o.__mpw;if(window.__gm&&!__gm.allowHit(st.me,r.id))break;{const h={t:'h',to:r.id,w,from:st.me};if(st.host)h.d=dmgFor(st.me,r.id,w);out(h);}tracked.delete(o);o.life=0;if(typeof hitTick==='function')hitTick(false);break;}}}}
+ const a=o.__mpP||o.pos;
+ for(const r of st.remotes.values()){if(!r.alive)continue;const d=DEFS[r.kind]||{},rad=(d.cls==='ship'||d.cls==='sub')?70:22;
+  if(segDist(a,o.pos,r.mesh.position)<rad){const w=o.__mpw;if(window.__gm&&!__gm.allowHit(st.me,r.id))break;{const h={t:'h',to:r.id,w,from:st.me};if(st.host)h.d=dmgFor(st.me,r.id,w);out(h);}tracked.delete(o);o.life=0;if(typeof hitTick==='function')hitTick(false);break;}}
+ o.__mpP=o.pos.clone();}}
 function hookSpawn(){if(typeof spawn!=='function'||spawn.__mp)return;const _s=spawn;spawn=function(k,...a){if(st.state==='on'&&!st.isOwner&&ownerOnly(k))k='fighter';const r=_s.call(this,k,...a);
   if(st.state==='on'&&!st.isOwner&&player&&player.weapons){player.weapons=player.weapons.filter(w=>!OWNER_W.has(w));if(!player.weapons.length)player.weapons=['GUN'];player.wi=0;if(player.ammo.GUN==null)player.ammo.GUN=AMMO.GUN||500;}return r;};spawn.__mp=1;}
 {const cs=document.createElement('style');cs.textContent=`@keyframes mpShim{0%{background-position:150% 0}100%{background-position:-50% 0}}
@@ -109,13 +118,13 @@ let shimT=0;
 // ---- loop ----
 let lastSend=0;const _q=new THREE.Quaternion();
 function loop(){requestAnimationFrame(loop);const now=performance.now()/1000;hookSpawn();if(st.state!=='on')return;hookFire();
+ const hold=window.__mpHold||(player&&player._hold);if(hold&&player&&player.mesh){player._hold=hold;player.mesh.position.copy(hold);if(player.vel)player.vel.set(0,0,0);player.onGround=false;player.alive=true;}
  if(player&&player.mesh&&now-lastSend>1/SEND_HZ){lastSend=now;const p=player.mesh.position,qq=player.mesh.quaternion;out({t:'s',k:player.kind,n:st.name,p:[+p.x.toFixed(2),+p.y.toFixed(2),+p.z.toFixed(2)],q:[qq.x,qq.y,qq.z,qq.w].map(x=>+x.toFixed(4)),a:!!player.alive&&st.hp>0,x:window.__mpExtraOut?__mpExtraOut(player):undefined});}
- const rt=now-INTERP;for(const r of st.remotes.values()){const b=r.buf;if(!b.length)continue;let i=b.length-1;while(i>0&&b[i-1].t>rt)i--;const A=b[Math.max(0,i-1)],B=b[i];
-  const k=B.t===A.t?1:Math.min(1,Math.max(0,(rt-A.t)/(B.t-A.t)));r.mesh.position.set(A.p[0]+(B.p[0]-A.p[0])*k,A.p[1]+(B.p[1]-A.p[1])*k,A.p[2]+(B.p[2]-A.p[2])*k);
-  r.mesh.quaternion.set(...A.q);_q.set(...B.q);r.mesh.quaternion.slerp(_q,k);
-  if(now-r.lastT>8)dropRemote(r.id,'timed out');}
+ for(const r of st.remotes.values()){const b=r.buf;if(!b.length)continue;const B=b[b.length-1];if(B.p)r.mesh.position.set(+B.p[0],+B.p[1],+B.p[2]);if(B.q&&B.q.length===4)r.mesh.quaternion.set(+B.q[0],+B.q[1],+B.q[2],+B.q[3]);
+  if(now-(r.lastT||now)>20)dropRemote(r.id,'timed out');}
  checkHits();if(now-shimT>0.1){shimT=now;const o=st.remotes.get(st.owner);if(o)setTag(o,(now*0.4)%1.4);}const dt=1/60;for(let i=fx.length-1;i>=0;i--)if(!fx[i](dt))fx.splice(i,1);}
 requestAnimationFrame(loop);
+setInterval(()=>{if(st.state!=='on'||!player||!player.mesh)return;const h=window.__mpHold;if(h){player.mesh.position.copy(h);if(player.vel)player.vel.set(0,0,0);}const p=player.mesh.position,qq=player.mesh.quaternion;out({t:'s',k:player.kind,n:st.name,p:[+p.x.toFixed(1),+p.y.toFixed(1),+p.z.toFixed(1)],q:[qq.x,qq.y,qq.z,qq.w].map(x=>+x.toFixed(3)),a:!!player.alive&&st.hp>0});},200);
 // ---- connection lifecycle ----
 function wire(c){c.on('data',m=>onMsg(c,m));c.on('close',()=>{st.conns.delete(c.peer);if(st.host){dropRemote(c.peer,'left');sendAll({t:'bye',from:c.peer});}else{st.err='Host left';leave();}emit();});c.on('error',()=>{});}
 async function host(){await leave();st.err=null;st.state='connecting';emit();await loadLib();const code=code4();
@@ -132,6 +141,8 @@ async function join(code){code=String(code||'').trim().toUpperCase();if(!code)th
 async function leave(){if(st.peer){try{out({t:'bye'})}catch(e){}const p=st.peer;st.peer=null;setTimeout(()=>{try{p.destroy()}catch(e){}},150);}
  for(const id of [...st.remotes.keys()])dropRemote(id);st.conns.clear();st.owner=null;st.isOwner=false;st.state='off';st.code=null;st.host=false;st.hp=100;emit();}
 addEventListener('pagehide',()=>{try{out({t:'bye'})}catch(e){}});
+{const pin=()=>{const h=window.__mpHold;if(!h||!player||!player.mesh)return;player._hold=h;player.mesh.position.copy(h);if(player.vel)player.vel.set(0,0,0);player.onGround=false;};
+ const _gh=window.gameHook;window.gameHook=function(dt){pin();if(_gh)_gh(dt);pin();};}
 // ---- menu panel (rendered INSIDE an existing menu view by ui builder; menu rows, not HUD buttons) ----
 function panel(el){el.innerHTML='';const css='font:600 18px var(--mw-f,system-ui);letter-spacing:.06em;text-transform:uppercase;color:#f2f2ea;padding:9px 16px;min-height:46px;border-left:3px solid transparent;cursor:pointer';
  const row=(t,f)=>{const d=document.createElement('div');d.className='dmLink mpRow';d.style.cssText=css;d.textContent=t;if(f)d.onclick=f;el.appendChild(d);return d;};
@@ -147,5 +158,5 @@ window.__mp={hit(to,w){if(st.state!=='on'||!st.remotes.has(to))return false;if(w
 }
 // test hooks (only with ?mptest)
 if(location.search.includes('mptest')){window.__mpSpawn=k=>{mission=null;spawn(k,'airbase');setPaused(false);};
- window.__mpRaw=(k)=>{mission=null;const f=spawn.__mp?null:0;spawn(k,'airbase');setPaused(false);return player.kind;};window.__mpPos=(x,y,z)=>{player.mesh.position.set(x,y,z);player.vel.set(0,0,0);player.onGround=false;};
+ window.__mpRaw=(k)=>{mission=null;const f=spawn.__mp?null:0;spawn(k,'airbase');setPaused(false);return player.kind;};window.__mpPos=(x,y,z)=>{player.mesh.position.set(x,y,z);player.vel.set(0,0,0);player.onGround=false;player.alive=true;const h=new THREE.Vector3(x,y,z);player._hold=h;window.__mpHold=h;try{const qq=player.mesh.quaternion;__mp.send({t:'s',k:player.kind,p:[x,y,z],q:[qq.x,qq.y,qq.z,qq.w],a:true});}catch(e){}};
  window.__mpWeap=()=>player.weapons.join(',');window.__mpPP=()=>player.mesh.position.toArray().map(Math.round);window.__mpFire1=()=>{try{player.wi=0;player.ammo.GUN=999;player.cool=0;fireWeapon(player);return 'ok';}catch(e){return e.message+' | '+e.stack}};window.__mpShootAt=()=>{try{const r=__mp._st.remotes.values().next().value;if(!r)return 'no-remote';player.mesh.lookAt(r.mesh.position);const w=player.weapons.includes('HYPERSONIC')?'HYPERSONIC':'GUN';player.wi=player.weapons.indexOf(w);player.ammo[w]=999;player.cool=0;fireWeapon(player);return w;}catch(e){return e.message+' | '+(e.stack||'').slice(0,800)}};}

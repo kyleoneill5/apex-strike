@@ -34,7 +34,7 @@ function upd(dt){if(S.kills>=NEED||(on()&&mp().isOwner)||(!on()&&mp()&&mp().owne
 function hit(s){const t=s.tgt,w=s.kind==='CRAM'?'CRAM':'SAMSTREAK';
  if(t.remote){mp().hit(t.remote.id,w);}else if(t.ai){if(s.kind!=='CRAM'||Math.random()<.2)killTarget(t.ai);}else if(t.proj){t.proj.life=0;}
  if(s.kind!=='CRAM'&&typeof explosion==='function')explosion(s.pos.clone(),1);}
-let lastK=0;if(window.__mp)__mp.on('k',m=>{if(m.killer===__mp.id)S.kills++;if(m.victim===__mp.id){S.kills=0;if(!(mp()&&mp().ownerActive))S.ready=false;}});
+if(window.__mp)__mp.on('k',m=>{if(m.killer===__mp.id){S.kills++;if(S.kills>=NEED)S.ready=true;}if(m.victim===__mp.id){S.kills=0;if(!(mp()&&mp().ownerActive))S.ready=false;}});
 {const iv=setInterval(()=>{if(typeof killTarget!=='function')return;clearInterval(iv);const _k=killTarget;killTarget=function(t){const w=t.alive;const r=_k.apply(this,arguments);if(w&&!t.alive&&on())S.kills++;return r;};},500);}
 let last=performance.now();(function loop(){requestAnimationFrame(loop);const n=performance.now(),dt=Math.min(.05,(n-last)/1000);last=n;try{upd(dt)}catch(e){console.warn(e)}})();
 // Activation (no new buttons): ui builder's killstreak slot calls __streak.use(); returns false if not earned.

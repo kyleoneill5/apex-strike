@@ -7,7 +7,7 @@
   ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.op==='open')this._e('open',this.id);else if(m.op==='err')this._e('error',{type:m.type});
    else if(m.op==='conn'){const c=new Conn(this,m.from);this._c.set(m.from,c);this._e('connection',c);setTimeout(()=>{c.open=true;ws.send(JSON.stringify({op:'ack',to:m.from}));c._e('open');},0);}
    else if(m.op==='ack'){const c=this._c.get(m.from);if(c){c.open=true;c._e('open');}}
-   else if(m.op==='data'){const c=this._c.get(m.from);if(c)c._e('data',m.d);}
+   else if(m.op==='data'){const c=this._c.get(m.from);if(c){c.open=true;c._e('data',m.d);}}
    else if(m.op==='close'||m.op==='gone'){const c=this._c.get(m.from);if(c&&(c.open||m.op==='gone')){c.open=false;this._c.delete(m.from);c._e('close');}}};}
   connect(id){const c=new Conn(this,id);this._c.set(id,c);this._ws.send(JSON.stringify({op:'conn',to:id}));return c;}
   reconnect(){}destroy(){try{this._ws.close()}catch(e){}}};}}

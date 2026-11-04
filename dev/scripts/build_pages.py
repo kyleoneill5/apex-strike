@@ -72,6 +72,28 @@ def common(s):
         if a not in s:
             sys.exit('red anchor missing: ' + a[:70])
         s = s.replace(a, b, 1)
+    # #28 inner layer: RAM and CIWS fire even when an SM-2/ESSM is already guiding.
+    # CIWS also leaves a kind:'ciws' round so the pass can see the gun, not only sparks.
+    ad_fixes = [
+        ("ADF.I.push({tgt,kind,pos:o,vel:V3(0,kind==='ram'?300:200,0),spd:kind==='sm2'?1100:kind==='ram'?700:650,mesh,life:kind==='sm2'?40:14});",
+         "ADF.I.push({tgt,kind,pos:o,vel:V3(0,kind==='ram'||kind==='ciws'?300:200,0),spd:kind==='sm2'?1100:kind==='ram'?700:kind==='ciws'?1000:650,mesh,life:kind==='sm2'?40:kind==='ciws'?5:14});"),
+        ("for(const e of W){if(e.uw||claimed(e))continue;const d=e.pos.distanceTo(P);\n    if(sub){if(e.u!==player&&d<4500&&d>400&&ADF.samT<=0){ADF.samT=3;launch(e,'sam');msg('IDAS AWAY',0.8);}continue;}\n    if(d<30000&&d>2500&&ADF.vls<=0){ADF.vls=1.2;launch(e,d>12000?'sm2':'essm');msg(d>12000?'SM-2 AWAY':'ESSM AWAY',0.8);}\n    else if(d<=2500&&d>600&&ADF.ramT<=0){ADF.ramT=1.5;launch(e,'ram');msg('RAM AWAY',0.8);}}",
+         "for(const e of W){if(e.uw)continue;const d=e.pos.distanceTo(P);\n    if(sub){if(e.u!==player&&d<4500&&d>400&&ADF.samT<=0&&!claimed(e)){ADF.samT=3;launch(e,'sam');msg('IDAS AWAY',0.8);}continue;}\n    if(d<30000&&d>2500&&ADF.vls<=0&&!claimed(e)){ADF.vls=1.2;launch(e,d>12000?'sm2':'essm');msg(d>12000?'SM-2 AWAY':'ESSM AWAY',0.8);}\n    if(d<=2600&&d>350&&ADF.ramT<=0&&!ADF.I.some(i=>i.kind==='ram'&&i.tgt===e)){ADF.ramT=0.6;launch(e,'ram');msg('RAM AWAY',0.8);}}"),
+        ("if(ship){let near=null,nd=1800;for(const e of W){if(e.uw)continue;const d=e.pos.distanceTo(P);if(d<nd){nd=d;near=e;}}\n    if(near){ADF.ciwsT-=dt;if(ADF.ciwsT<=0){ADF.ciwsT=0.06;const o=P.clone().add(V3(0,18,0));const dd=near.pos.clone().sub(o);const L=dd.length();dd.normalize();\n     for(let k=0;k<2;k++)fire.spawn(_t.copy(o).addScaledVector(dd,L*Math.random()).add(V3(rnd(4),rnd(4),rnd(4))),dd.x*900,dd.y*900,dd.z*900,0.25,0.8,0,1,0.85,0.3,1);\n     if(Math.random()<dt*(nd<900?2.2:1.1)){near.life=0;near.padKill=true;ADF.kills++;msg('CIWS SPLASH',1);}}}",
+         "if(ship){let near=null,nd=2700;for(const e of W){if(e.uw)continue;const d=e.pos.distanceTo(P);if(d<nd){nd=d;near=e;}}\n    if(near){ADF.ciwsT-=dt;if((ADF._ciwsL||0)>0)ADF._ciwsL-=dt;if(ADF.ciwsT<=0){ADF.ciwsT=0.06;const o=P.clone().add(V3(0,18,0));const dd=near.pos.clone().sub(o);const L=dd.length()||1;dd.normalize();\n     for(let k=0;k<2;k++)fire.spawn(_t.copy(o).addScaledVector(dd,L*Math.random()).add(V3(rnd(4),rnd(4),rnd(4))),dd.x*900,dd.y*900,dd.z*900,0.25,0.8,0,1,0.85,0.3,1);\n     if(!(ADF._ciwsL>0)){ADF._ciwsL=0.4;launch(near,'ciws');}\n     if(Math.random()<dt*(nd<1200?6:3)){near.life=0;near.padKill=true;ADF.kills++;msg('CIWS SPLASH',1);}}}"),
+        # Rockets: autopilot on so a launch flies the real-time gravity turn through staging.
+        # Manual mode used to kill the engine at MECO (~2.3 km/s) and never light stage 2.
+        ("v.os=OM.create(d.rk||'rocket');v.os.auto=false;v.os.throttle=1;",
+         "v.os=OM.create(d.rk||'rocket');v.os.auto=true;v.os.throttle=1;"),
+        ("if(st.prop<=rsv){s.engine=s.auto?s.engine:false;s.events.push(s.stage===0?'MECO - STAGE 1 DEPLETED':'SECO - FUEL DEPLETED');}",
+         "if(st.prop<=rsv){if(s.stage>=s.stages.length-1)s.engine=false;s.events.push(s.stage===0?'MECO - STAGE 1 DEPLETED':'SECO - FUEL DEPLETED');}"),
+        ("if(s.auto&&s.launched&&s.engine)guide(s,h,q);",
+         "if(s.auto&&s.launched&&s.engine)guide(s,h,q);if(!s.auto&&s.launched&&s.stage<s.stages.length-1){const stM=s.stages[s.stage];if(stM&&stM.prop<=(stM.reserve||0)){if(!s._mSep)s._mSep=s.t;if(s.t-s._mSep>2){stageSep(s);s._mSep=0;s.engine=true;}}}"),
+    ]
+    for a, b in ad_fixes:
+        if a not in s:
+            sys.exit('anchor missing: ' + a[:80])
+        s = s.replace(a, b, 1)
     if '<base ' not in s:
         s = s.replace('<head>', '<head><base href="../"><link rel="icon" href="data:,">', 1)
     return s

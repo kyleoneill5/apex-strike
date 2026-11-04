@@ -19,7 +19,13 @@ function ownerAssert(){// owner: always max (10th prestige, rank 70), everything
  else{if(p&&p.d&&p.d.owner){Object.assign(p.d,{owner:false,title:'',emblem:'',tier:'',unlocks:{}});if(p.d.p>=10&&p.d.lvl>=70&&!(D.prog.tot>0)){p.d.p=0;p.d.lvl=1;}}D.prog.owner=false;if(D.title===OWNER_TITLE)D.title='';if(D.emblem===OWNER_EMBLEM)D.emblem='';D.unlocks=D.unlocks.filter(u=>u!=='*');D.isOwner=false;}}
 function gather(){const p=window.__prog;D.prog=Object.assign({},p&&p.d?p.d:J('dmProg',D.prog));D.settings=J('milsim_settings',D.settings);D.tag=localStorage.getItem('mp_name')||D.tag;
  const ok=localStorage.getItem('mp_owner_key');if(ok)D.owner=ok;ownerAssert();}
-function write(){gather();D.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify({d:D,s:sum(JSON.stringify(D))}));}catch(e){}}
+// A wipe (localStorage.clear / removing the save) must survive pagehide.
+// Otherwise the unload handler writes the in-memory profile back and the wipe never sticks.
+let suppressWrite=false;
+const _lsClear=localStorage.clear.bind(localStorage),_lsRemove=localStorage.removeItem.bind(localStorage);
+localStorage.clear=function(){suppressWrite=true;D=blank();try{if(window.__prog&&__prog.d)Object.assign(__prog.d,{xp:0,tot:0,lvl:1,p:0});}catch(e){}return _lsClear();};
+localStorage.removeItem=function(k){if(k===KEY||k==='dmProg'){suppressWrite=true;if(k===KEY)D=blank();}return _lsRemove(k);};
+function write(){if(suppressWrite)return;gather();D.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify({d:D,s:sum(JSON.stringify(D))}));}catch(e){}}
 function apply(){localStorage.setItem('dmProg',JSON.stringify(D.prog));const p=window.__prog;if(p&&p.d)Object.assign(p.d,D.prog);
  if(D.settings)localStorage.setItem('milsim_settings',JSON.stringify(D.settings));if(D.tag)localStorage.setItem('mp_name',D.tag);if(D.owner&&!localStorage.getItem('mp_owner_key'))localStorage.setItem('mp_owner_key',D.owner);}
 if(!localStorage.getItem('dmProg')||(D.owner&&!localStorage.getItem('mp_owner_key')))apply();
