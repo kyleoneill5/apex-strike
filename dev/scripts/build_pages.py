@@ -91,6 +91,9 @@ def common(s):
          "if(s.auto&&s.launched&&s.engine)guide(s,h,q);if(!s.auto&&s.launched&&s.stage<s.stages.length-1){const stM=s.stages[s.stage];if(stM&&stM.prop<=(stM.reserve||0)){if(!s._mSep)s._mSep=s.t;if(s.t-s._mSep>2){stageSep(s);s._mSep=0;s.engine=true;}}}"),
         ("origin = 32N 83W (Warner Robins, GA)",
          "origin = 32N 83W (Warner Robins, GA)\nW.coast=US;"),
+        # Stage 1 accel 24 m/s^2: 61 s burn reaches ~26 km, not ~38 km, and not the forced 130 m test cut.
+        ("const ICBM_ST=[{t:61,a:30},{t:66,a:32},{t:61,a:36}];/*#27 Minuteman III burn times*/",
+         "const ICBM_ST=[{t:61,a:24},{t:66,a:32},{t:61,a:36}];/*#27 Minuteman III burn times, stage-1 accel set so sep is ~25-30 km*/"),
         # SM-3 plume starts aft of the nozzle bell so the engine stays visible
         ("const b=_v.copy(o.pos).addScaledVector(o.dir,-0.4-k*1.2);fire.spawn(b,",
          "const b=_v.copy(o.pos).addScaledVector(o.dir,-1.15-k*1.2);fire.spawn(b,"),
