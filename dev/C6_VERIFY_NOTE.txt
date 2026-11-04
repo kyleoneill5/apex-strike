@@ -1,0 +1,6 @@
+C6 handoff (Nov 3, 8:50 PM ET). Logic tests pass (see FINAL_MERGE.txt C6 entry). Cloud agent still has to verify:
+1. Screenshots: progress/c6_abrams.png, c6_navy.png and c6_onfoot.png are INVALID or unconfirmed. Retake them after closing the menu. Start a vehicle first (__tank.spawnK('abrams')), then hide #menu. Hiding the menu while no player exists causes updCamera null errors.
+2. Enter/exit for aircraft, ship and Abrams. Use __c6.player, not `player`, which is script-scoped. Use __base.enter(P) / __base.exit(). Tank exit is ONLY a long-press on #bWpn (tank_core.js line ~330), because __base.canExit() returns false for the armor class. The spawn(k) wrapper drops the tank before validating k, so an invalid key such as 'burke' leaves the player with tk set and PL=null, which causes a flood of updCamera errors. Consider guarding that.
+3. Red forces don't fire: __red.W stayed at 0 over a 30x30-step run with 10 alive. That's a likely bug, so investigate ENEMY_RULES and the fire trigger.
+4. Visual check of deck crews, ships and tanks. Check that the Mixamo Soldier.glb license is OK. WebKit/iPhone run and FPS.
+c6_flow.mjs is a draft test for items 1–3 (untested after edits; box rebooted mid-run).

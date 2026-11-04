@@ -1,0 +1,498 @@
+UFO (TR-3B + Lazar saucer): src/gtr3b.js, src/gsaucer.js (already in build.sh; add 'gtr3b.js gsaucer.js' as extras for lean/deploy build). Status: node --check BUILD_OK + DEPLOY_BUILD_OK (lean 491 KB); saucer corrections in code (unpolished stainless exterior, pewter interior only, no rim lights, no blue reactor glow, tilt only in Delta/high-speed). WebKit spawn/fly render queued on lock - check progress/{tr3b,saucer}_{closeup,flight}.png and /tmp/ufo_run.log. Refs: refs/tr3b, refs/saucer (sources.txt; compare.png NOT made). NOT deployed.
+[main builder] files in src/ (status):
+ - gplay_thumb.js  v3: two-thumb landscape arc (FIRE inner arc, WPN/CTX/FLR/CAM outer arc, thr bottom-right below #hr, insets from --sa* vars). Offline geometry check passes for 6 landscape sizes; awaiting lead's overlap_safe.mjs re-run. Include only if it passes, else ship without (gplay.js arc remains).
+ - grods2.js / grods3.js  rods detail, deployable fins + atmospheric steering (Chromium-verified: fins deploy ~76 km, steering changes lateral vel), markers, 3rd-person orbit view + inset targeting, minimap, unit icons, hi-contrast. Chromium test ERR []. WebKit smoke on deploy build not run (renders paused).
+ - g5.js  Easy-mode pitch hold (no auto-level, no stall nose-down, auto-throttle climb). 10 s hold test passed (pitch increases into a loop, release holds attitude, ERR []).
+ - gboom.js  realistic vapor cone / Mach-cone shimmer / low-level spray (refs/sonicboom/). NOT rendered - unverified, exclude.
+ - gmslsnd.js  procedural per-missile + hypersonic sounds (refs/audio/sources.txt). Not browser-tested - unverified, exclude.
+ - gdetail_sr71.js (+ SR.lathe/SR.srMat export in gsr71.js)  SR-71 panel map, weathering, stencils, nozzle detail. No compare.png yet - must NOT ship per AIRCRAFT RULE.
+ - head.html  live theme-color/no-cache/black bg patch ported to source.
+ - src/build_deploy.sh  helper: build.sh order minus unverified files -> ../deploy.html.
+ Full build.sh: BUILD_OK.
+executor (crash+black hull): src/grockets.js (stainless metalness 1->0.55 = black-hull fix, VERIFIED render; iPhone hull textures halved = memory fix, untested on device), src/gplume.js (liftoff smoke cap on touch, untested on device). No per-frame leak found headless. Use same preview4 file list for preview5.
+F9 recovery/legs builder: src/gf9legs.js (NEW, wrap-only, STABLE: headless landing on droneship, 0 errors) + src/build.sh (gf9legs.js inserted after gmechazilla_arms.js). No grockets.js/g9.js/orbit.js edits. Sources refs/falcon9/legs_sources.txt; shots progress/f9_after_{entry,landburn,legs,touchdown}.png, f9legs_before/after.png. Test builds milsim_f9a.html/milsim_f9b.html are scratch, do not deploy.
+[backlog-2 builder 2026-10-15] grods2.js + grods3.js: VERIFIED in WebKit (iPhone landscape 932x430, trodwk.mjs): page loads with no page errors, rod fires with fins, fins fully deploy (<80 km), stick steering moves fins and changes lateral velocity by ~71 m/s, impact OK, ERR []. Fix: rod HUD buttons (3RD PERSON / FOLLOW ROD / HI-CONTRAST) no longer overlap the ROD/SCORE panel or CAM button (grods3.js CSS only). Shot: progress/rods_webkit_fins.png, progress/rods_webkit_impact.png. READY TO MERGE.
+[visuals builder 02:38 UTC] src/gtr3b.js + src/gsaucer.js EDITED (copies in wip/*_easyfly.js): shared UFOFLY easy flight (linear stick, fast response, auto-stop on release, no ground wobble, 6 s speed ramp instead of instant dash), spawn wrapper removes stale UFO meshes on vehicle switch (saucer-stays bug), UFO follow-cams skip when window.__studio/__testCam set, touch devices drop the 3 TR-3B corner PointLights + saucer PointLight (sprites keep the glow). Status: build.sh BUILD_OK only. WebKit flight test (ufofly.mjs -> /tmp/ufofly.log) queued on render lock, NOT yet passed. Include in Preview 6 ONLY if /tmp/ufofly.log shows ERR [] and 'ufo objects after switch to fighter 0'.
+[visuals builder] gairdef.js: NOT changed. Air-defense models NOT at missile grade yet; new studio renders progress/ad_{thaad,tpy2,dsling,elm2084,patriot}.png show mid detail. Do not advertise as upgraded.
+[backlog-2 builder] gmslsnd.js: VERIFIED in WebKit (tsndwk.mjs): all 10 procedural sounds (aim9, aim120, maverick, hellfire, tomahawk, jassm, sam, hydra, hyper, harr) synthesize in iPhone-engine WebAudio, non-silent, 1.9-8.4 s, ERR []. Fix: peaks normalized to 0.9 (were up to 1.94 = clipping). Adds debug exports MSND.bufs/MSND.ctx. Audio-only, no render needed. READY TO MERGE (remove from build_deploy.sh exclude list).
+[backlog-2 builder] gboom.js: NOT verified - loads in WebKit with no errors (boom object present), but render shows no visible vapor cone (progress/boom_vapor.png); supersonic shot timed out. Keep EXCLUDED.
+[visuals builder 02:48 UTC] UFO flight/saucer fix VERIFIED (WebKit iPhone ctx, ufofly.mjs, /tmp/ufofly2.log): ERR [], 0 UFO objects left after switching to fighter, 1 PointLight on touch (was 5), keyboard stick: ~105 m/s at 1 s, ramps to 2400 (TR-3B)/1800 (saucer) by 10 s, release -> 0.3 m/s within 2 s, stays level. => src/gtr3b.js + src/gsaucer.js are OK TO INCLUDE in Preview 6 (no build.sh change needed). Caveat: not tested on a real iPhone; headless fps number meaningless (software GL).
+[visuals builder] progress/*_polished.png UFO shots are NOT usable (camera framing wrong) - do not send.
+[backlog-2 builder] gplay_safe.js: "HUD Shown/Hidden" popup moved to top:34% centre; WebKit check (tpolish.mjs) shows it overlaps no HUD control (hits []), ERR []. Shot progress/toast_after.png. READY TO MERGE.
+[backlog-2 builder] gdetail_darkstar.js: tails/rudders now use a stencil-free copy of the RAM material, so the mirrored "JP-7" skin stencils are gone from the fins (body stencils unchanged; DARKSTAR fin decal kept). WebKit spawn ERR []. Shot progress/darkstar_tails_after.png. READY TO MERGE.
+[visuals builder 02:57 UTC] src/gairdef.js OK TO INCLUDE (backup of previous: wip/gairdef_before.js). WebKit load ERR [] (adstudio.mjs + adgame.mjs). Changes: Iron Dome launcher rebuilt to RamatDavid photo (skid I-beam frame + braces, 4 outrigger jacks, 4 separate ribbed boxes x5 Tamir, no blue bands per Kyle, telescopic mast w/ spiral cable, louvred cabinet + beacon, twin rams); interceptor TypeError fixed (pac3mse/tamir passed a Mesh as geometry -> would also crash any in-game PAC-3/Tamir spawn); THAAD canister rims/bands, cable raceways, THAAD bumper label, tail lights, mud flaps. Hit-location damage untouched. Shots: progress/ad_irondome.png, ad_interceptors.png, ad_thaad.png.
+[visuals builder] FOR CONTROLS LEAD: gadop.js (Air Defense menu control) is NOT in build.sh or build_deploy.sh -> menu shows "Air defense control unavailable". With it added (tested in milsim_adtest.html) __adop.start works for all 4 types, ERR []. The "THAAD shows no launcher / Iron Dome shows Patriot" report: sites hold the correct meshes (thaad 8 cans, patriot 12, idome 20, dsling 12); the problem is the gadop camera (eye = launcher+9 m looking outward), so the launcher is never in frame. Suggest pulling the eye ~25 m behind and above the launcher looking past it. gadop.js is yours, I did not edit it.
+[backlog-2 builder 03:13 UTC] gshuttle.js: WebKit VERIFIED for load/spawn/launch (tshwk.mjs, ERR []): countdown -> liftoff -> ascent, SRBs separate at T+124 s at 41.9 km (real: ~T+123 s, ~45 km; ~3 km low). Earlier "SRBs still attached" report was a faulty test check, not the code. Added MLP side detail, visible crew access arm + white room, test hooks SH.S()/SH.act(). Shots: progress/shuttle_pad_final.png, shuttle_oaa.png, shuttle_liftoff_wk.png, shuttle_srbsep_wk.png (orbiter+ET after SRB sep). CAVEATS: pad not raised (attempt reverted, it put the camera inside geometry); RSS shown rolled back; refs/shuttle/compare.png does NOT match the real pad (less structure/piping, flat pad). External tank orange. Include per Kyle.
+
+=== HANDOFF: gstaging.js (missile stage separation) — 03:33 UTC ===
+File: src/gstaging.js. Build line: in src/build.sh add `gstaging.js` immediately AFTER `gicbmstage.js`.
+What it does: the flying Minuteman III is clipped at the live stage's aft station (S1 0-7.5 m, S2 7.5-11.3 m, S3 11.3-13.9 m), so no spent stage stays stuck on and the old whole-missile shrink is removed. Each spent stage falls away as only its own clipped segment of the real model, with a retro and radial kick, a gentle tumble and gravity. The plume is off during the gap between stages (existing gicbmstage behaviour).
+Tests (WebKit, stagetest.html on port 8800, manual staging via o.stageReq): 0 console errors. S1 shed and clipped; it is 76 m from the missile shortly after sep. The missile is clipped at 7.5 m, then 11.3 m, and the bus phase is reached.
+UNCONFIRMED visually: no overlap close up, and the next stage's plume coming from its new tail. progress/staging_sep.png is a side-on shot from about 390 m and is too far to show detail.
+Condition: merge ONLY if the full final build still loads with 0 errors.
+
+[ship builder, Oct 21] gship_catch.js — #12 Mechazilla catch sequencing + #13 Starship landing-burn engine sequencing. NOT READY TO SHIP until a visual check passes.
+ - Build insert: right after gstarflop.js (before gplume.js). Test build: /tmp/ship_build.sh -> test_ship.html. No core edits.
+ - Booster (tower): event 13->3 center Raptors <1200 m; lateral divert from offshore aim to tower axis <450 m; hover/slow approach <60 m (vh floor 2.5 m/s); arms now stay open until hover and close over ~3 s (old code started closing at 400 m). The existing grockets catch/settle/drop logic is unchanged.
+ - Ship: relight is staggered 1-2-3 during the flip, then 3->2 (<220 m) ->1 (<45 m). This is s.engVis only (visual/event). Physics thrust is untouched.
+ - Engine cutoff (msl #14): hover assist and engine sequencing only run when s.thr>0, and nothing forces thr>0, so throttle-zero shutdown is respected. msl: if #14 changes s.thr/s.eng semantics in DS, please re-run __shipCatch.test().
+ - Tests (WebKit, port 8817): __shipCatch.test(): caught, x=0.0. Touchdown 6.4 m/s at prop 22000, 3.7 m/s at 35000; the hover burns its last fuel (OUT OF FUEL at h≈19 m / 1 m). __gsflop.test() still lands, splashdown 4.2 m/s. ERR [].
+ - Pre-existing (not mine, reproduces in gstarflop test): ship climbs to vh=+36 m/s at h≈273 and reports OUT OF FUEL before splashdown.
+ - Unverified: no screenshot yet (posed free-look shots missed the tower). Arm close timing has not been checked by eye. #15 (Raptor/whole-ship realism) not started.
+[ship builder, Oct 21 #2] gstarflop.js + gship_catch.js updates (#12/#13). Build position unchanged (gstarflop.js, gship_catch.js before gplume.js). No core edits.
+ - FIX gstarflop: ship climbed (+36 m/s @273 m) and ran dry - 3 Raptors at min throttle out-thrust the ship. Now engine-out throttling 3->2->1 Raptors in auto landing. __gsflop.test(): lands, splashdown 1.7 m/s, no OUT OF FUEL (WebKit + headless).
+ - Booster hover: final descent profile sqrt(2*3.2*h) (shorter hover), BCFG.starship.landProp reserve 22 t -> 30 t (set from gship_catch.js). __shipCatch.test(): caught at 28/30/32/35 t, touchdown 2.2-2.4 m/s, no OUT OF FUEL. (22 t would still run dry - that is why the reserve was raised.)
+ - Test hooks added: __shipCatch.info/arms(k)/dy(d)/shot(eye,tgt,fov) (test-only, harmless).
+ - Refs: refs/mechazilla_catch/ (5 Commons photos + 5 IFT-5 video stills, sources.txt).
+ - ERR [] in WebKit test_ship.html. Catch screenshots: see next entry (render lock queue).
+
+=== HANDOFF: ppl (#20 realistic people + OWNER avatar) — Oct 21 14:29 EDT ===
+Files: src/ppl_people.js (NEW), models/ppl_soldier.glb (NEW, deploy must copy models/ alongside the html), refs/people/{sources.txt,real_*.jpg,Soldier.glb}. Test: /tmp/ppl_build.sh -> test_ppl.html, ppl_test.mjs (port 8820). No core edits.
+build.sh insert: `ppl_people.js` at the END (after gdeclutter.js; must come after garmy.js and ggfx.js, which is where GLTFLoader is imported).
+What it does: rigged, skinned soldiers (Idle/Walk/Run + procedural aim + death fall) replace garmy's box-men inside every infantry squad. garmy hit/target logic is untouched; the old meshes are only hidden. Enemy kit: olive uniform, helmet, plate carrier and pouches, rifle, a red armband and a Red Coalition flag patch (same art as gnavy_enemy.js). LOD: animation drops to 5 Hz past 350 m, and troops are hidden past 900 m.
+HOOKS (stubs for other builders, call after PPL.onReady):
+  PPL.crew(parentObj,{n,pose:'sit'|'stand',kind:'crew'|'enemy'|'owner',at:[Vector3..],scale}) -> pilots (pose sit, in cockpits), deck crews (stand, on ship decks), vehicle crews. navy/air/army builders: wire this in at merge. Not wired yet.
+  window.ppl_ownerAvatar() -> {root,mixer,set(state),kill,revive}. OWNER ONLY (mp builder: call it only for Kyle's owner peer; never offer it to other players or enemies). Kit: black tactical uniform; gold chest trim inlaid with 12 diamond studs; gold visor; gold armband; gold insignia set with a faceted diamond; a gold back-face outline glow with a diamond sparkle shimmer (visible in MP).
+Tests (WebKit headless, unlocked logic run): 85 soldiers dressed, PPL.crew sit returns 3, owner flag true, ERR [].
+UNVERIFIED / RISKS: screenshots progress/ppl_{lineup,owner,enemy,death}.png are queued on the render lock (check that they exist). No in-game screenshot and no compare.png yet. 85 skinned meshes plus their outlines have not been perf-tested on an iPhone (instancing NOT done, only distance LOD). Pilot, deck-crew and vehicle-crew placement isn't wired in. LICENSE: the Soldier.glb is a Mixamo asset, NOT CC0/CC-BY (see refs/people/sources.txt), and needs Kyle's/lead's OK or a swap before release.
+[ppl update 14:42 EDT] License: KEEP Mixamo Soldier.glb (lead decision, recorded in refs/people/sources.txt). LOD changed: rigged people only for squads within 160 m of the camera (max ~20 skinned). Farther squads show garmy's original baked men (impostor; no mixer cost). New debug: PPL.place(), PPL.igShot().
+CREW WIRING for merge (one line each, inside PPL.onReady(()=>...)):
+ - Cockpits (air / gdetail_* builders): PPL.crew(planeMesh,{n:1,pose:'sit',kind:isPlayer?'owner':'enemy',at:[new THREE.Vector3(0,seatY,seatZ)],scale:1}). Seat offsets are per model, so measure them at merge. Hide the owner pilot in FPV.
+ - Deck crews (navy builder): PPL.crew(shipGroup,{n:4,pose:'stand',kind:'crew',at:[deck points]}) on enemy ships. For the US side, use kind:'crew' with the band/patch changed later (US kit NOT built yet).
+ - Vehicle crews (garmy tanks): PPL.crew(u.mesh.userData.tu,{n:1,pose:'sit',kind:'enemy',at:[hatch]}) as a hatch commander.
+ - MP: ppl_ownerAvatar() only for the owner peer.
+BLOCKER: the ppl screenshots were NOT taken. The box is overloaded (load ~87, 15.2/16 GB RAM used, 117 node/webkit procs), and the WebKit test page crashed twice while running PPL.igShot (likely out of memory). It still needs one locked session: node ppl_test.mjs (5 shots), then compare.png.
+[ship builder, Oct 21 #3] Kyle #19 cargo-bay orbital weapon deploy: NEW src/gship_bay.js. Insert right after gship_catch.js (before gplume.js). No core edits (wraps fireWeapon, cycleWeapon, ctxAction, tick).
+ - Shuttle in orbit with payload bay doors open (existing gshuttle doors): FIRE deploys, weapon switch cycles KINETIC ROD x4 / WEAPON SAT x2 / INTERCEPTOR x4. CTX still deorbits (closes doors). Autopilot still closes doors at ~70 s in orbit.
+ - Starship in orbit (stage 1, coasting): first FIRE opens a flank "pez" payload door (lazily added to the orbit-view model), next FIREs deploy. Payload mesh ejects in the orbit view; rod/interceptor spawn in the main world (camera does NOT follow them yet).
+ - Rods reuse grods 'rod' projectile + rodImpact; WSAT reuses rodSat() and drops 2 rods after 3.5 s; SBI reuses 'hyper' missile homing on nearest drone/boat.
+ - Player only; nothing touches enemy AI. Orbit only (where() returns null otherwise; F-22 check = null).
+ - moon_ builder (Saturn V/CSM): to hook in, extend where() in gship_bay.js - return {k:'csm',ok:true,h:<alt m>} when the CSM is in orbit; the rest is generic.
+ - Tests (WebKit, forced orbit states): shuttle 3/3 deploys ok, ammo decremented, projectiles spawned; starship door opens on FIRE, deploy ok; ERR []. Ammo-reset-on-vehicle-change fix applied after that run; re-run pending (box ran out of memory).
+ - Unverified: natural (non-forced) ascent-to-orbit flow, screenshots, bay-door look vs real photos (no refs yet).
+
+=== gsub (fixes #3 sub 3rd-person launch cam, #8 underwater visibility, #9 deep ocean) — Oct 21 ===
+FILES: src/gsub.js (canonical). src/gsub_ocean.js is a SUPERSEDED duplicate — do NOT include it.
+BUILD ORDER: insert gsub.js right after gdeclutter.js (end of the list), and BEFORE subx_sub.js (subx hooks window.__sub.SUBX.lc).
+  Private script: /tmp/gsub_build2.sh -> test_gsub.html. Tests: gsub_t3.mjs (logic), gsub_t3.mjs shots (render). Core edits: none.
+WHAT IT DOES:
+ #9 terrainH wrapped: shelf -> slope -> abyssal plain ~450-620 m; seafloor mesh follows camera; dive to 600 m (test depth 490, warning); depth gauge top-centre replaces old depth pill.
+ #8 underwater: depth-graded clear-blue fog (raised brightness at depth this pass), hemi fill, sub floodlamp below 60 m, god rays, marine snow.
+ #3 cold launch: on any non-torpedo sub launch (HYPERSONIC/CRUISE/SLBM) the missile is held on the tube axis and rises ~depth/1.7 s, breaches with splash, then flies on.
+   Cam shot 1 underwater abeam (whole hull + rising missile), shot 2 water-level breach + climb (3.2 s), then normal follow cam. Re-asserted in renderFrame so later camera modules can't show empty sky.
+ HOOK for subx_: window.__sub.SUBX.lc={phase:'tube'|'air',t,v,o,tube,f,side,R,br,rs}; window.__sub.onLaunch.push(fn); set lc.camByX=true (or have __subx.seq.sub active) and gsub stops writing the camera.
+VERIFIED (WebKit, headless logic, 0 console errors): launch state machine HYPERSONIC tube(0.4s y-18.9, 1.2s y-4.2) -> air (2.2s y95, 4.2s y502) -> ends; SLBM enters tube phase; dive 420 m target reached 390 m in 60 s, seabed -524 m.
+UNVERIFIED: screenshots of the new cam framing (queued behind render lock; see progress/sub_launch3p_*.jpg when present); all-vehicle spawn loop crashed the page under box memory pressure — re-run at merge QA; iPhone framerate; interaction with subx camera when both loaded.
+STATUS: NOT READY until the launch-cam screenshots are checked by eye.
+
+=== NAVY builder (#6 US Navy classes, #10 Red Coalition enemies) — Oct 21 3:21 PM ET, takeover of interrupted navy builder ===
+Files: src/gnavy.js (NAVYX models: burke, tico, zumwalt, lcs, ford, america + LOD; NAVY_FLEET task group; window.NAVY_VLS API for msl_/SM-3), src/gnavy_enemy.js (RED_FORCE: 4 ships, 2 subs, 4 jets reusing existing models with Red Coalition flag/paint; ENEMY_RULES frozen).
+Build order: append "gnavy.js gnavy_enemy.js" right after gdeclutter.js (end of list). See /tmp/navy_build.sh. Shot script: /tmp/navy_shot.mjs.
+Core edits: none. Only change this session: __navy.shot now calls renderer.render directly (old render(0) crashed with no player), added __navy.wp().
+Refs: refs/navy_{america,burke3,ford,lcs,tico,zumwalt}.
+VERIFIED: WebKit build loads with ZERO console/page errors; all 6 US ships spawn on water; 10 Red units spawn (ship x4, sub x2, jet x4); ENEMY_RULES excludes tr3b/saucer/sr71/sr72/darkstar, subs=cruise+torpedo, jets=gun+aam+cruise (code read, no nukes/50k). Shots looked at: progress/navy_{ford,burke,tico,zumwalt,lcs,america,enemy_ship,enemy_ship2}.jpg (raw renderer, no post-fx). Old progress/navy_*.png from previous builder are INVALID (black frames).
+UNVERIFIED / gaps: detail is mid-grade, NOT yet missile-grade (flat grey hulls, light weathering, hull numbers/VLS hatches not legible at shot range, no close-ups); Red Coalition markings not confirmed by eye on close-up; enemy jet shot missed the jet (navy_enemy_jet.jpg = empty sky); enemy weapon firing not exercised in a test; PPL.crew deck crews not wired; no iPhone FPS measurement; no compare.png.
+STATUS: NOT READY (functional + error-free, merge-safe; needs detail pass + close-up verification).
+
+=== NAVY detail pass 1 (Oct 21 ~3:50 PM ET) — supersedes gaps listed in the navy entry above ===
+Files changed: src/gnavy.js only (backup of the pre-pass version: /tmp/gnavy.bak.js). Build order is unchanged (gnavy.js gnavy_enemy.js after gdeclutter.js). Shot script: /tmp/navy_shot2.mjs.
+Shared helpers changed (affects every class): hullNum now sits on the real flared/curved hull surface (the bow digits were buried before; DDG-125 rendered as ".25"); hullMat adds scupper rust runs, waterline grime and soot; mk41 adds instanced raised hatch lids and hinges; ciws has a 6-barrel M61 cluster; mk45 adds a muzzle, blast boot and shield seams; SPY arrays get a 32x32 T/R tile texture with a bolted frame; new __navy.lw() helper for shots.
+VERIFIED (WebKit, zero console/page errors, every shot looked at by eye):
+ - Hull numbers readable: 125 (Burke), 70 (Tico), 1000 (Zumwalt, low-vis), 78 (Ford).
+ - Weathering visible and toned down so it isn't overdone.
+ - VLS hatch grid, the SPY tile face, the Mk45 and the forward CIWS are visible in progress/navy_burke_{bow,spy,vls,aft}.jpg.
+ - Other close-ups: progress/navy_{ford_bow,ford_island,tico_bow,tico_spy,zumwalt_bow,zumwalt_dh}.jpg.
+ - refs/navy_{burke3,ford,tico,zumwalt}/compare.png made; sources.txt updated.
+ - Enemy jet re-shot (progress/navy_enemy_jet.jpg): Red Coalition roundel on the wing. Enemy ship (progress/navy_enemy_ship_mark.jpg): red flag on the mast.
+HONEST GAP: compare.png shows the superstructures are still blocky next to the real photos. Missing: deckhouse clutter (doors, ladders, vents, antennas, life rafts, boats), stack and exhaust detail, the Ford's island radars and deck markings. Enemy ships carry the flag but share the US grey with no distinct paint scheme. The enemy jet's vertical tails are flat slabs (existing model).
+UNVERIFIED: iPhone FPS after the added instanced meshes (the VLS adds about 2 draw calls per launcher); enemy weapons firing in a live test; LCS and America not re-shot.
+STATUS: NOT READY for missile grade. Safe to merge as is: no errors, and all ships and enemies spawn.
+[ship builder, Oct 21 #4] gship_bay.js (#19) + gship_catch.js updates. Insert positions unchanged.
+ - VERIFIED (WebKit, ERR []): ammo resets on vehicle change (shuttle 3/1/3 -> starship 4/2/4). Shuttle autopilot no longer closes the doors for 45 s after the last deploy (doors 1.0, still in orbit). Rod chase cam active after rod deploys (Shuttle + Starship).
+ - VERIFIED REAL ASCENT (Starship, autopilot, warp 10, no forced state): orbit at t~410 s, h~191 km -> bay active, FIRE opens the pez door (~5 s), FIRE deploys rod, ammo 4->3, chase cam on. NOTE for the test harness: inp.throttle=1 is needed (msl #14 cutoff) and os.auto=true; the default is manual mode.
+ - FIX: the HUD WPN/CTX buttons hold the ORIGINAL cycleWeapon/ctxAction references (g5 btn()), so wrappers never saw real taps -> capture-phase pointerdown intercept on #bWpn/#bCtx, only while a bay is live. Starship (rocket class, no weapons) never calls fireWeapon from FIRE -> FIRE edge-detected in tick while in orbit. Tap test: WPN tap cycles payload.
+ - Shuttle natural ascent with the bay was NOT run (forced state only); the forced-state shuttle screenshot came out black (camera not on the orbiter) - not a valid shot.
+ - Test hook change: __shipCatch.shot(eye,tgt,fov) now HOLDS the camera through render() until shot(null) (old one was overwritten by the next frame, so the earlier catch shots were the default camera). Plus __bay.kinds().
+ - Spawn check (WebKit): 21/22 vehicles spawn clean. darkstar logs "darkstar TypeError: Attempted to assign to readonly property." from gdetail_darkstar.js / gdetail_f35.js try/catch and falls back to the FA-18 model. That file was modified 08:24 today by another builder, not ship. Owner: please fix.
+ - Refs: refs/cargo_bay/ (STS-80 door opening x2, STS-1 open bay, SN20 tiles, SN15 flap/nose, sources.txt). Starship pez door: no free photo found, UNVERIFIED geometry.
+
+[msl builder, takeover, Oct 21 ~3:40 PM ET] #2 staging, #7 SM-3, #14 engine cutoff, silo-throttle bug
+FILES: src/msl_sm3.js, src/msl_cutoff.js (new); core edit already in src/gstaging.js line 32 (manual ICBM sets inp.throttle=1). gmsl2_stage.js/gmsl2_sm3.js NOT merged (duplicate, exclude).
+BUILD ORDER (build.sh): ... gspace.js gicbmstage.js gstaging.js msl_sm3.js msl_cutoff.js gstarflop.js ... (right after gstaging.js, before gstarflop.js). See /tmp/msl_build.sh.
+VERIFIED (WebKit headless, test_msl.html, console errors = [] on every run):
+ - Silo ICBM bug: manual launch climbs (36 m -> 21.5 km in ~10 s), no fall.
+ - Pad rockets: msl_cutoff wraps OM.launch so any manual launch starts at throttle 1 (rocket+starship launched from throttle 0 now climb; before fix they cut at liftoff and sat on pad).
+ - #14: rocket+starship throttle 0 -> cut:true lit:0 (MECO msg + puff); throttle up -> staggered relight lit 0.03 -> 1 over 1.2 s. Fighter at throttle 0 holds 6% idle, no shutdown.
+ - #7 SM-3 logic: weapon list GUN,SAM,SM3,...; 4 stages fire in order (Mk72 6 s -> Mk104 -> Mk136 pulse1 -> pulse2), 55 km / 3.2 km/s at ph4, spent stages drop as debris (deb 1,2,4,5).
+ - #2 staging: progress/msl_stage_man_0..7.png (previous builder) show spent stage falling away cleanly, upper stage continuing.
+UNVERIFIED / NOT POLISHED:
+ - SM-3 visuals: progress/msl_sm3_vls.png renders BLACK (first frame/warm-up), msl_sm3_sep1.png camera too far, missile a speck. Need closer launch cam + re-shot. SM-3 model not seen by eye.
+ - Engine relight/cutoff visuals not screenshotted. Shuttle/falcon9 cutoff not separately tested.
+ - Horizon in stage_man shots shows stair-stepping (space AA belongs to world_/space work).
+ - Note: __milsim.fireWeapon is the pre-wrap ref; in-game FIRE uses the wrapped fireWeapon (SM3 path) — in-game fire button path not clicked in test.
+STATUS: logic READY TO MERGE; visuals NOT READY (SM-3 camera/shot pass outstanding).
+
+=== NAVY detail pass 2 (Oct 21 ~3:45 PM ET) ===
+Files: src/gnavy.js (backup of the pass-1 version: /tmp/gnavy.pass1.js), src/gnavy_enemy.js. Build order unchanged. Shot list for this pass: progress/navy_{burke_bow,burke_mid,burke_funnel,burke_spy,ford_deck,ford_island,tico_mid,zumwalt_bow,lcs,america,enemy_ship_mark,enemy_ship_aft,enemy_jet}.jpg.
+Added:
+ - clutter(): runs on the high-detail LOD level only and skips the LHA. Doors, louvred vents and an aft ladder are ray-cast onto the real deckhouse faces, plus whip antennas, life-raft canister racks along both deck edges, and 2 RHIBs in davits on the largest deckhouse.
+ - stackTop(): funnel uptakes, soot cap and side louvres on the Burke (2 funnels) and the Tico (3).
+ - fordIsland(): SPN-46/43 approach radars, satcom domes and whips.
+ - Ford flight-deck texture: red/white ramp rounddown, deck-edge line, elevator outlines, JBD panels, tyre scuffs, centreline lights, foul line.
+ - Enemy ships: mapped hull materials are now tinted dark blue-grey (0x7d8ea4 x map), so the Red Coalition is clearly darker and distinct from the US grey.
+VERIFIED (WebKit, ZERO console/page errors, shots looked at by eye): Burke doors, vents, rafts, RHIBs and funnel pipes are clearly visible; the Tico gets the same; the Ford deck markings show; the enemy ships are visibly darker with the red flag; the LCS and America re-shot fine.
+NOT FIXED: enemy jet tail fins are still flat slabs. My reshape only matches BoxGeometry fins, and the fallback jet() model (g2.js) apparently builds them differently. gdetail_enemy.js (ENEMY_AC) is not in this build. The fix belongs at merge (include gdetail_enemy.js) or in a third pass.
+Also not verified: clutter on the Zumwalt (its deckhouse isn't a BoxGeometry, so it gets rafts only); iPhone FPS with the extra parts (roughly 150-250 extra small meshes per hi-LOD ship, not yet instanced or merged; may need mergeGeometries before ship); the Ford deck top-down shot is cropped and needs a better angle.
+STATUS: NOT READY (closer; error-free and merge-safe).
+
+=== WORLD builder (gworld/world, port 8814) — #4 space smoothness + #5 US landmass — Oct 21 ~3:40 PM ET ===
+FILES: src/gworld.js (#5, from previous world builder, unchanged), NEW src/world_space.js (#4), NEW tex/earth_day_4k.jpg (NASA Blue Marble NG), NEW tex/moon_lroc_4k.jpg (NASA SVS CGI Moon Kit), refs/world_space/sources.txt. Test: /tmp/world_build2.sh -> test_world.html, world_t.mjs + world_limb.mjs.
+BUILD.SH INSERT: gworld.js right after g1.js (before g2.js). world_space.js AFTER gdeclutter.js but BEFORE moon_mission.js (moon_mission's renderFrame wrapper must wrap outside world_space's, otherwise the moon mission's oScene frames get rendered by world_space instead).
+CORE EDITS: none. world_space wraps renderFrame: oScene/oCam frames go through a private EffectComposer with an MSAA render target (4 samples on touch, 8 on desktop, HalfFloat, pixelRatio min(dpr,2)) + bloom (HIGH) + OutputPass. Root cause of the stair-stepped limb: the shared composer renders into a non-MSAA target, so renderer antialias did nothing (and it is off on touch). Also: max anisotropy on all oScene textures, swaps 2k Earth day/Moon to 4k (new Texture source, no re-upload error), adds 1/255 screen-space dither to the transparent atmosphere ShaderMaterials (7 patched). logarithmicDepthBuffer was already on (g1).
+TEST (WebKit, iPhone 15 Pro Max landscape, render lock, free-mem checked): ERR [] (zero console errors). Orbit reached: ALT 199 km, 7.79 km/s, Ap 214 / Pe 176 km readout shown. #5 land test earlier by prior builder: ERR [], all spawn points valid.
+SHOTS: progress/world_aa_limb.png, world_aa_globe.png, world_aa_readout.png (+ world_aa_moon/jupiter — not usable).
+VERIFIED: limb/horizon edges smooth, no stair-steps, no visible banding; 4k Earth loaded; zero errors; orbital speed/readout.
+UNVERIFIED / REMAINING: close-up limb still looks unrealistic — surface reads as flat pale blue with a thick pale atmosphere band and a hard inner ring (gspace ascent aerial-perspective shader too strong at 200 km; needs tuning). Moon close-up shot was blocked by Earth (test framing), Jupiter/Mars/Venus not re-checked by eye. Stars look crisp but not separately zoom-checked. iPhone frame rate with MSAA x4 not measured on device. #5 US overview shot from prior builder (progress/world_us_overview.png) is all black — US outline not re-verified by eye this session.
+STATUS: NOT READY (smoothness fix is mergeable now; realism of limb + overview shot still to do).
+
+=== gsub TAKEOVER (#3 / #8 / #9) — Oct 21 ~4:00 PM ET — STATUS: NOT READY (#8, #9 ready; #3 underwater shot ready, breach/climb shot still has a visual bug) ===
+FILES: src/gsub.js only (gsub_ocean.js still SUPERSEDED, do not include). Build order unchanged (after gdeclutter.js, before subx_sub.js). Core edits: none. Backup of pre-takeover file: /tmp/gsub_js.bak2.
+CHANGES THIS PASS: (1) renderFrame wrapper hides cloudDeck + g1 clouds whenever camera is under water (sky clouds were showing through the water in launch shots). (2) smoke/fire particle spawns below y=-1.5 skipped during a sub launch (they rendered as dark fogged blobs that blacked out the underwater shot). (3) breach cam raised to 6-14 m and aims lower (hor*0.32) so the sea stays in frame.
+VERIFIED (WebKit, 0 console/page errors, browser closed each run): launch state machine tube->air->end for HYPERSONIC and SLBM; all 22 vehicles spawn (no errors); dive toward 420 m reached 360 m in 60 s, seabed -578 m there (well past 140 m). Shots checked by eye:
+  progress/sub_launch3p_tube_v5.jpg  — whole SSBN hull abeam + missile/gas leaving the tube, clear blue water, god rays (GOOD)
+  progress/sub_launch3p_slbm_v4.jpg  — SLBM rising above the hull (GOOD)
+  progress/sub_underwater_420m_v4.jpg — deep, clear water, seabed visible (GOOD)
+  (Read-tool may show cached old images for the un-suffixed names; use _v4/_v5 copies.)
+REMAINING BUG (#3): progress/sub_launch3p_breach_v5.jpg / climb_v5.jpg — a large screen-centred blob over the breach point (bright at breach, dark grey ~1 s later with clouds visible inside). Not the smoke particles (now suppressed) or clouds; suspect a flash/glow sprite or heat-haze pass from another missile module (gmslhook/ggfx/gboom) seen from water level. Missile and trail are framed correctly behind it.
+UNVERIFIED: iPhone framerate; interaction with subx camera when both loaded; sub hull close-up detail (subx's job).
+
+=== NAVY pass 3 (Oct 21 ~3:55 PM ET) ===
+BUILD ORDER CHANGE: gdetail_enemy.js now goes BEFORE gnavy.js (… gdeclutter.js gdetail_enemy.js gnavy.js gnavy_enemy.js). It defines ENEMY_AC (photo-referenced Su-57, J-20, MiG-29, F/A-18E, MQ-9, Shahed), and gnavy_enemy.js uses those models for Red Coalition jets. If main build.sh already includes gdetail_enemy.js, keep exactly ONE copy and keep it ahead of gnavy_enemy.js.
+Files: src/gnavy.js (backup of the pass-2 version: /tmp/gnavy.pass2.js), src/gnavy_enemy.js (backup /tmp/gnavy_enemy.pass2.js). Shot script: /tmp/navy_shot4.mjs (the copy there was trimmed to the single Zumwalt re-shot).
+Changes:
+ - mergeStatic(): bakes the static parts of each high-detail ship into one mesh per material. It skips anything referenced from userData (Mk45 barrel, SPN antenna, rigs), parked aircraft and transparent decals.
+ - Enemy jets: the box-fin reshape now runs ONLY for the fallback jet() model; the ENEMY_AC jets keep their real swept fins.
+ - Zumwalt: deckhouse doors, vents, ladder and whips. Rafts and RHIBs are skipped on purpose, because the real DDG-1000 keeps its sides clean.
+ - Ford deck shot re-framed (whole flight deck, high 3/4 view).
+VERIFIED (WebKit, ZERO console/page errors, shots looked at by eye):
+ - Mesh counts per high-detail ship, after merge (before): Burke 49 (~459), Tico 55 (~456), Zumwalt 36 (~190), LCS 26 (~196), Ford 578 (~1111), America 1770 (~1804).
+ - Merged ships look the same as before the merge (progress/navy_burke_mid, burke_bow, tico_mid).
+ - Enemy jets now use the photo-referenced airframes with real fins and camo (progress/navy_enemy_jet.jpg, navy_enemy_jet2.jpg).
+ - Ford whole-deck markings are readable (progress/navy_ford_deck.jpg).
+ - The Zumwalt's deckhouse doors and vents show (progress/navy_zumwalt_dh.jpg).
+ - refs/navy_{zumwalt,ford}/compare.png updated.
+GAPS: The Ford and America are still heavy because their parked aircraft and helicopters (full fighter/helo models, not merged) dominate; they need a low-poly parked-aircraft proxy or instancing. No FPS measured on an iPhone or iPhone-class device. The Red Coalition roundel and fin flash on the ENEMY_AC jets were not checked close up. One Zumwalt door sits at the deckhouse/deck seam.
+STATUS: NOT READY (the Ford/America parked aircraft and on-device FPS are open). Burke, Tico, Zumwalt and LCS are merge-ready.
+[ship builder, Oct 21 #5] Screenshots (render lock, 2 sessions, ERR [] both):
+ - progress/ship_catch_{1_approach,2_hover,3_closing,4_caught}.png (close framing) + ship_catch_5_close.png. Eye check: arms open on approach/hover, half-swung at closing, closed on the caught booster. The swing reads but is subtle from this angle.
+ - progress/ship_ss_{engines,hotstage,ship_mid,nose_flaps,gridfins}.png = #15 BEFORE state. Seen: hot-stage vent ring OK, barrel weld bands faint, booster grid fins render as flat dark slabs (no lattice) at close range, no tiles visible from the leeward side.
+ - progress/ship_bay_starship_door.png (real orbit, chase view: ship too small to see the door) and ship_bay_starship_rodcam.png (rod chase cam, ROD-1 HUD, 107 km, working).
+ - Known framing issue: wide shots from >100 m around the pad came out mostly black (some large dark object near the camera, not identified). Close framing is fine.
+ - #15 detail upgrades NOT started (only before shots and refs so far).
+
+[msl builder, pass 2, Oct 21 ~4:30 PM ET] SM-3 VLS launch cam + hatch, cutoff tests, FIRE path
+NEW FILE: src/msl_sm3cam.js — Mk 41 8-cell deck plate, one lid swings open, missile held in cell 0.45 s, then hatch/frangible debris + plenum burst; close deck-level launch camera for 7 s, then abeam chase cam for 2.5 s at each of the first two stage separations. Debug toggle window.__msl_camOff.
+BUILD ORDER CHANGE: msl_sm3cam.js must be the LAST module (after gdeclutter.js), otherwise gplay.js gpCam smoothing overrides the camera. Order: ... gstaging.js msl_sm3.js msl_cutoff.js gstarflop.js ... gdeclutter.js msl_sm3cam.js (see /tmp/msl_build.sh).
+VERIFIED (WebKit, console errors [] every run):
+ - FIRE button path: real pointerdown/up on #bFire with SM3 selected -> ammo 4->3, SM-3 launched, hatch created, missile held and then flew (y=162 m at t=1.67 s).
+ - Falcon 9 cutoff: throttle 0 -> cut; throttle up -> staged relight 0.03->1. (Rocket and Starship were already passing.)
+ - Launch camera holds position (it used to drift into the default follow cam).
+ - Shots I looked at: progress/msl_sm3_sep1.png (good: chase cam, Mk 72 booster dropping away below the upper stage, ocean horizon); msl_cutoff.png (THR 0 %, MECO - ALL ENGINES CUTOFF), msl_relight_mid.png (THR 50 %, IGNITION SEQUENCE), msl_relight_full.png (THR 100 %, climbing).
+NOT VERIFIED / NOT DONE:
+ - msl_sm3_vls_hatch.png is still BLACK for the first ~0.5 s after launch. It was black before msl_sm3cam too, so the camera is not the cause, and the camera position is correct. Root cause not found (suspect a render/post-fx issue right after launch).
+ - msl_sm3_vls_emerge.png: shows the mast and plenum cloud, but the missile is at the top edge of the frame, too small to judge, so the hatch opening and the missile leaving the tube are not seen yet.
+ - Cutoff/relight shots: the engines and plume are hidden behind the attitude ball, so the shots prove the state change but not the visuals.
+ - Shuttle: NOT covered. gshuttle.js runs a scripted ascent (S.thr set by phase; it never reads inp.throttle, and the SRBs can't shut down anyway). Cutoff there would need edits to gshuttle's ascent code, which I didn't make.
+ - SM-3 'missile grade' model: no model change this pass; the close-up comparison against refs/sm3/compare.png is still outstanding.
+STATUS: logic READY TO MERGE (msl_sm3.js, msl_cutoff.js, msl_sm3cam.js last). Visuals NOT READY.
+[ship builder, Oct 21 #6]
+ - DARKSTAR FIX (core edit, src/gdetail_f35.js darkstarX): Object.assign(mesh,{position:new Vector3}) assigns to three.js's read-only position -> TypeError, so darkstar fell back to the FA-18 model. Now uses m.position.set(...). WebKit spawn darkstar: no warnings, ERR [].
+ - BLACK WIDE SHOTS: not a scene object. A raycast + hide-each-scene-child luminance test from the same eye gives a normal frame (lum 150; hiding any child changes it by <=20). The black frames were incomplete/stalled renders under box load (screenshot taken ~200 ms after a camera jump). Fix in my harness: wait until frame luminance > threshold before saving. Other builders: same trick if you see black frames.
+ - SHUTTLE REAL ASCENT (no forced state, warp 10): orbit at t~581 s, 112 km, doors auto-open to 1.0 -> bay active; FIRE deployed rod + sat, ammo 3/1/4, rod cam on; doors still open 10 s later with autopilot on. ERR [].
+ - Test hook: __shipCatch.exhibit() (copies the booster and ship up at y=400 for close-ups), __shipCatch.ray().
+
+=== wh (#16 warhead detail) - handoff Oct 21 ~4:45 PM ET - READY (HGV + SM-3 KW); MIRV bus/RV detail NOT DONE ===
+Files: src/gwh.js (new module, no core edits). build.sh insert: append gwh.js AFTER gmsl2_sm3.js (last in list; see /tmp/wh_build.sh).
+What it does: MSL_MODELS.hgv -> Dark Eagle C-HGB (biconic, ablative TPS texture, 4 aft flaps, plasma sheath glow); WH.kw() SM-3 IIA kinetic warhead (seeker window, IR housing, 4 divert + 6 ACS DACS thrusters with puffs), auto-fitted to every 'sm3' projectile; easy flight for HYPERSONIC + KW (smoothed stick, capped turn rate, auto-stabilize/re-home on release, aim reticle). No new buttons.
+This pass: added NaN/Inf fragment guard (SAN) on all GWH materials; lathe normal sanitize.
+VERIFIED (WebKit, test_wh.html, port 8816): zero console/page errors; 19/19 vehicles spawn; HYPERSONIC fires Dark Eagle C-HGB follow; SM-3 reaches ph=kw with detailed KW (whKW=true).
+Shots (looked at): progress/wh_hgv_closeup.png, progress/wh_hgv_plasma.png, progress/wh_kw_closeup.png; refs/hgv/compare.png, refs/sm3_kw/compare.png (+sources.txt).
+UNVERIFIED / BUGS:
+- CORE BUG (not wh): studio cameras parked over open ocean (destroyer spawn, ~400 m off) render large hard-edged BLACK blocks; bloom-off fixes the HGV view, close (<1.5 m) KW camera still black -> looks like a bloom/ocean NaN or near-plane issue in core (g7 bloom / ocean). Shots were taken with bloom disabled + KW cam 3.5 m/FOV16. Needs ui/world owner check in normal gameplay.
+- Flight-feel numbers (turn-rate cap, release behaviour) not re-measured this pass (prior builder's wh_test.mjs logic); wh_hyper_flight_hud.png / wh_hgv_inflight.png are from the old run, not re-checked.
+- KW gold MLI texture reads slightly rainbow; HGV plasma wedge a bit pink - polish pass.
+- MIRV bus + RVs: existing gcam.js MIRV only; no new missile-grade bus/RV model yet.
+- No public photo of bare C-HGB or IIA KW exists; geometry from public descriptions (noted in sources.txt).
+
+=== NAVY pass 4 / FINAL (Oct 21 ~4:05 PM ET) ===  STATUS: READY (see caveats)
+Build order: … gdeclutter.js gdetail_enemy.js gnavy.js gnavy_enemy.js   (keep only one copy of gdetail_enemy.js, ahead of gnavy_enemy.js). Build: /tmp/navy_build.sh -> test_navy.html. Perf/shot script: /tmp/navy_perf.mjs.
+Core edits: NONE. Files: src/gnavy.js (backup of the pass-3 version: /tmp/gnavy.pass3.js), src/gnavy_enemy.js.
+Changes:
+ - Parked aircraft on the Ford and America (F/A-18E, F-35, helicopters) are now instanced. One prototype per type is baked into one geometry per material, then one InstancedMesh per material covers every copy. Transparent and additive parts (flames) and non-zero LOD levels are excluded.
+ - Zumwalt door seam fixed: doors moved up 0.25 m, and only the central doors are kept on the tumblehome deckhouse.
+ - BUG FIX: enemy ships built from the NAVYX hulls were still flying the US ensign on the mast. It is now swapped for the Red Coalition flag.
+VERIFIED (WebKit, ZERO console/page errors on both builds):
+ - Meshes per high-detail ship: Ford 56 (was 1111), America 105 (was 1804), Burke 49, Tico 55, Zumwalt 36, LCS 26. All under 150.
+ - Rough frame-time comparison, WebKit at 390x844 DPR 3 (draw calls, ms per frame; base = pass-2 build):
+   fleet view:   2197 -> 181 calls, 169 -> 98 ms
+   Ford view:     201 -> 109 calls, 145 -> 109 ms
+   America view: 1985 -> 277 calls, 201 -> 141 ms
+ - Shots looked at (844x390): progress/navy_{ford_parked,america_parked,zumwalt_dh,enemy_roundel,enemy_fin,enemy_flag}.jpg. Parked jets and helos render correctly. The Red Coalition roundels are crisp on the enemy jets' wings. The enemy ship mast flies the Red Coalition flag, not a US flag.
+CAVEATS:
+ - Playwright WebKit cannot throttle the CPU, so the ms numbers are relative only; absolute values are inflated by software GL on an overloaded box (load ~60). Real iPhone FPS is still unmeasured.
+ - Triangle count is higher in close Ford/America views (America 277k -> 380k tris) because the instanced parked aircraft always render full detail, where the old copies dropped to lower LOD levels at distance. Draw calls, the main iPhone cost, dropped about 7-12x. If the GPU is fill/vertex-bound on device, swap the prototype for the lower-LOD level.
+ - The tail fins of the gdetail_enemy jets carry camo but no fin flash; the roundels are on the wings.
+
+=== HANDOFF (ui_ takeover, Oct 21 4:08 PM ET): #1 MW2 interface + #11 prestige - status: READY (functional + overlap QA), polish items listed ===
+Files: src/ui_prestige.js, src/ui_mw2.js, src/ui_cards.js (+ fonts/, thumbs/ must deploy beside html). Insert: append `ui_prestige.js ui_mw2.js ui_cards.js` in that order at END of build.sh cat list (after gdeclutter.js). Core edits: NONE. Do NOT merge gui_theme.js.
+Fixes this pass:
+- ui_mw2: HUD minimap/ammo/killstreak never displayed (CSS display:none + style '' fallback, and menu check used inline style) -> fixed. Minimap now sits under the eye (bHud) button instead of covering it. #hc vehicle-name chip hidden in-flight (was overlapping the SPEED card; less text). Portrait: ammo readout moved above the thumb cluster (was under the joystick zone).
+- ui_cards: card thumbnails were overridden by an !important stylesheet -> now setProperty(...,'important'); real thumbs show on all cards except b2 and himars (no render to cut; default art).
+- ui_prestige: any existing save without owner:true no longer inherits Kyle's owner profile (only a fresh device / owner:true save = owner). NOTE for mp_: final owner identity should come from the reserved-tag check, not "no save".
+Tests (WebKit, one browser, closed each run, free -m checked): ui_test.mjs (P3 Lv70 save) and ui_test_owner.mjs (fresh = owner) full tap-through PASS: home->settings/prestige->confirm->prestige (P3->P4, Lv1) ->back->play->all 8 tabs->fighter->next->launch->HUD; 0 overlap fails at 844x390, 852x393, 932x430, 956x440, 390x844, 440x956 (checks map/ammo/KS vs all buttons, hcards, #hr, #msg); 26/26 vehicles spawn; zero console errors.
+Shots: progress/ui_owner_menu.png, ui_owner_prestige.png, ui_prestige_confirm.png, ui_owner_select.png, ui_owner_airdef.png, ui_owner_jet.png, ui_owner_jet_portrait.png, ui_owner_sub.png.
+Unverified / polish: killstreak column auto-hides in short landscape (no free space between #hr and thumb cluster) so it only shows on taller layouts; tab strip scrolled to AIR DEFENSE shows a clipped first tab ("…MENTAL"), cosmetic; airdef cards show "–" speed/weapons stats; real-device iPhone safe areas only simulated; MP hooks (__mwKS.onEarn, __mp) stub-tested only; owner MOD menu item depends on mp_ builder (__mwMenu.add).
+
+=== WORLD builder update 2 (Oct 21 ~4:15 PM ET) — world_space.js pass 2 ===
+CHANGES (all in src/world_space.js, no core edits):
+ - ISS-look haze: string patches to GSPACE-ASCENT shaders at runtime (5 patches applied): limb shell no longer glows on rays pointing away from Earth (that was the grey veil over the stars), soft ground edge instead of step() (removes the hard inner ring), thinner 6 km scale-height blue band, aerial in-scatter about halved with grazing optical depth capped, softer rim.
+ - BUG FIX (affects normal play, not just screenshots): three Sky box pins z=w at the far plane; with logarithmicDepthBuffer part of it was clipped, so above ~5 km half or all of the screen went BLACK (the reason the old US overview was black). Patched to w*0.99995. Verified: 17 km overview now renders sky + whole US.
+ - Debug look-at (__wspace.look/fov/occ) for Moon/planet shots.
+TEST: WebKit iPhone landscape, render lock, free-mem checked, ERR [] on every run.
+SHOTS: progress/world_v2_limb_iss.png, world_v2_globe.png, world_v2_us_hi.png, world_v2_mask.png (game land raster), world_v2_moon/venus/mars/jupiter/stars.png; refs/world_space/compare.png (NASA ISS iss074e0089803 vs game), refs/world_space/sources.txt.
+VERIFIED BY EYE: limb thin blue, black sky above, clouds and ocean visible, no hard ring, no stair-steps. US land raster matches the real contiguous US (Natural Earth 1:50m: Florida, Gulf/Texas, Great Lakes, Chesapeake, Puget Sound, Cape Cod, Maine). 3D overview at 17 km shows the whole US shape. Stars: crisp single-pixel points.
+UNVERIFIED / OPEN:
+ - Limb band still a bit pale/white vs the deep-blue ISS line; Earth slightly over-saturated blue. Orbit path lines (other builder's HUD) cross the view.
+ - Moon close-up framing NOT fixed: the look-at doesn't center the target (Moon/planets land off-center), and in the last run the Moon was behind Earth. The Moon itself renders with LRO craters (small, seen once).
+ - Mars/Jupiter render as correctly colored point lights (Venus brightest, Mars reddish) = realistic naked-eye look, but my framing couldn't confirm which dot is which; the Venus shot looked through the blue limb.
+ - Milky Way texture shows soft blotches when looking high (pole stretch), not crisp.
+ - US overview at 9 km (us_a) didn't take the camera override; only the 17 km one is valid.
+ - iPhone frame rate with MSAA not measured on device.
+STATUS: NOT READY (haze, sky black-screen fix and US map are mergeable; Moon/planet framing + limb color polish remain).
+
+[msl builder, pass 3, Oct 21 ~4:35 PM ET]
+NOTE TO wh/sub builders: the black first 0.5 s of the VLS launch goes away with bloom OFF (__milsim.dbg.bloom.enabled=false). wh now owns that bug (suspected NaN in bloom). My shots this pass were taken with bloom off.
+CHANGES:
+ - src/msl_sm3cam.js: fixed deck-edge camera ~30 m abeam the cell. Telephoto FOV tracks the missile so it fills ~1/3 of the frame height. Added a 3-cone additive Mk72/Mk104/Mk136 plume that flickers and grows with altitude, off during coasts and after KW separation. Still must be LAST in the build.
+ - src/msl_sm3.js detail pass: dark stage-joint rings with 16 bolt heads each (parented to the right stage so they drop with it), yellow live-ordnance band, umbilical connector, antenna blades.
+ - CORE EDIT src/gshuttle.js (backup: /workspace/milsim/backup_gshuttle_msl_1607.js), two spots:
+   (a) after the aT= thrust line in ascent: manual (S.auto false) throttle 0 -> S.ssmeCut, SSMEs off (aT x0.71 while the SRBs burn, 0 after SRB sep), message 'SSME CUTOFF - SRBs STILL BURNING' / 'SSME RELIGHT'.
+   (b) line ~349: S.thr=t>-6.6&&!S.ssmeCut?1:0 (was resetting thr to 1 every frame).
+VERIFIED (WebKit, ERR [] on every run):
+ - Shuttle: in ascent at throttle 0 -> thr 0, cut true, SRBs still on, g 1.58 -> 1.12; throttle 1 -> relit, g 1.58.
+ - progress/msl_sm3_vls_emerge.png: missile ~1/3+ of the frame, plume, joint rings, fins and hatch debris visible. Good.
+ - progress/msl_sm3_vls_hatch.png (bloom off): open cell plate and plenum steam on deck.
+ - progress/msl_cutoff_c2.png vs msl_relight_c2.png (tower cam): whole Starship in view, no plume at THR 0 %, plume back at THR 60 %. msl_shuttle_ssme_cut.png: SRB exhaust still on after SSME cutoff.
+UNVERIFIED / ISSUES SEEN (not mine unless noted):
+ - In the tower-cam cutoff shots the vehicle is small. The chase/onboard cams have the attitude ball over the engines (HUD layout, ui builder).
+ - Starship HUD says 'ENGINE ON' while cut (HUD reads os.engine; msl_cutoff doesn't change os.engine).
+ - Shuttle HUD overlaps: 'MISSILES undefined' chip and text stacked top-left, stray black lines across the view (ui/shuttle owner).
+ - Hatch frame: lower half of the frame is a very dark deck/hull.
+ - Not yet seen in a shot this pass: the SM-3 close-up compared side-by-side with compare.png, and the cutoff message overlapping the HUD.
+STATUS: logic READY TO MERGE (msl_sm3.js, msl_cutoff.js, gshuttle.js edit, msl_sm3cam.js LAST). Visuals: launch/emerge/sep shots OK with bloom off. NOT READY until the bloom black-frame fix lands.
+
+=== gsub pass 3 (launch realism + hull) — Oct 21 ~4:35 PM ET — STATUS: NOT READY ===
+FILES: src/gsub.js only (order unchanged). Core edits: none. Refs: refs/gsub/sources.txt, refs/gsub/compare.png.
+ROOT CAUSE FOUND for breach "blob" (for wh): HYPERSONIC is a glide body (o.hw) — updBallistic (gicbmstage area, built line ~6686) explodes it when pos.y<=groundAt+2; gsub released it at y=0.6 -> explosion() at the breach (fire 36/84 + smoke 48/60 puffs = bright then brown blob). FIXED in gsub: release at y=4.5 with vel.y>=25. Climb shot still shows a brown blob ~1 s later (unclear source, maybe a second impact/explosion path) — wh owns.
+BLACK-BLOCK frames: underwater shots go black with composer post passes on (SMAA/cine/N8AO/bloom); with all post passes disabled (test-only window.__gsubPostOff) underwater shots render correctly -> NaN is in a post pass (wh). Breach shot still black even with post off on the last run (it rendered fine in the v8 run) -> intermittent, unverified.
+NEW: fogged rim-lit bubble particle system (no more white cartoon puffs; base Particles have no fog); gas-generator bubble burst at the tube + bubble column dragged behind the rising missile; underwater smoke/fire suppressed during sub fire; hatch pivots (24 deck discs) — nearest hatch to the tube swings open on launch and the tube position snaps to it; breach FX: wide white gas/water cloud (160 puffs), 260 spray droplets with gravity, foam ring; hull: procedural anechoic tile skin (staggered tiles, tonal variation, patched tiles, bump map), matte rubber (rough .82), Ohio proportions (hull 10.2 -> 8.8 m beam, L/B ~12.7); underwater hull fill + rim lights; launch cam moved in (R*0.95 abeam of tube), breach cam R*1.5.
+VERIFIED: WebKit 0 console/page errors (logic + shots runs), launch state machine, all 22 vehicles spawn (prior run of this pass), depth past 360 m/seabed -578 m.
+BEST SHOTS (post off): progress/sub_launch3p_tube_v10.jpg, sub_launch3p_rise_v10.jpg (close hull with tile grid, bubble column); progress/sub_launch3p_breach_v8.jpg (clean breach, no explosion, but the column is small/far — pre-enlargement).
+NOT DONE / UNVERIFIED: hatch opening not readable on camera (too small); breach column vs Trident photo still undersized in the shot; hull is still dark — tiles visible only up close; no ignition-above-water timing tweak; iPhone fps of 1600-bubble system; subx camera interaction.
+
+[msl builder, pass 4, Oct 21 ~4:30 PM ET]
+CORE EDITS (backups /workspace/milsim/backup_g7_msl_*.js, backup_gshuttle_msl_*b.js):
+ - g7.js HUD line ~43: 'ENGINE ON/OFF' -> 'ENGINES ON/OFF', OFF also when ENGINE_CUT.state(player).cut. Verified: progress/msl_hud_engines_off.png reads 'ENGINES OFF' at THR 0.
+ - g7.js line ~49: the Shuttle uses cls 'silo', so it was getting the ICBM-silo HUD text ('MISSILES undefined', 'TARGET: ENEMY RANGE 40 km NW'). Added a shuttle branch with an empty label (the Shuttle has its own shInfo panel). Verified: page text has no 'undefined'; msl_shuttle_bloomon.png is clean.
+ - gshuttle.js line ~269: the 'stray black lines' were NOT bloom. They are the LC-39A lightning catenary wires (LineSegments, hard 0x444444, straight from the 110 m mast to the ground). Now they sag (24-segment catenary), light grey at 35 % opacity, no depth write. Verified gone/faint with bloom off AND on (msl_shuttle_bloomoff.png / _bloomon.png).
+ - msl_sm3cam.js: debug window.__msl_camZoom (camera framing factor, default 1).
+SM-3 close-up vs refs/sm3/compare.png (msl_sm3_closeup.png): white body, dark stage joints, 4 clipped-delta tail fins (~1.26 m span, close to the published ~1.1-1.57 m), ogive nose, yellow band, plume all match. Remaining gaps: the black Mk72 aft band is hidden by the plume in this frame, and the real launch has a much bigger plenum cloud around the missile at 50 m. Not fixed this pass.
+ERR [] in all runs. UI builder owns: the SCORE panel overlapping the Shuttle LAUNCH button, stacked HUD text, attitude-ball position.
+STATUS: logic READY TO MERGE. Visuals NOT READY until the bloom fix lands (wh).
+[ship builder, Oct 21 #7] #15 Starship detail pass 1 + checks.
+ - CORE EDIT src/grockets.js tiles() + tile material (backup /tmp/shipw/grockets.bak): tile faces lighter charcoal (34-52 vs 20-36), lit upper bevel edge, centre pin dot, bumpMap from the tile map (bumpScale 0.6). Hex pattern now reads at close range (progress/ship_ss15_after_tiles_close.png; before: ship_ss15_tiles_close.png was flat black).
+ - Already present and checked by eye (not changed): diamond-lattice SH grid fins (gsh_gridfin.js), Raptor 3 SL/RVac bells (graptor3.js), stainless weld rings + vertical welds, hot-stage vent ring, flaps.
+ - compare: refs/starship/compare_ship15.png (5 rows: real photo vs game). Close-up shots: progress/ship_ss15_*.png.
+ - Spawn check after all changes: 22/22 vehicles spawn, ERR [] (darkstar fixed).
+ - SHUTTLE BAY SHOT: still not valid. On a real ascent the orbit render is black (frame lum 1, HUD only) even though the camera is 75 m from a visible orbiter (camera far 4.5e6, no fog). Deploy LOGIC works. gshuttle.js was modified 16:07 today by another builder. Not fixed by ship (moving target); owner/lead should check the Shuttle orbit render.
+ - Not done for #15: Raptor powerhead plumbing close-up (bells only seen from below), weld bead normal detail, altitude-dependent plume review (gplume.js, not touched), mobile perf measurement of the bump map.
+
+=== gsub pass 4 — Oct 21 ~4:55 PM ET — STATUS: NOT READY (underwater launch beats good; breach blocked by blob bug owned by wh) ===
+FILES: src/gsub.js only. Core edits: none. compare.png refreshed (deck ref vs hatch shot; Trident breach vs breach shot).
+NEW: (1) hatch beat: 1.3 s hold before cold launch, close cam ~16 m off the chosen hatch; hatch swings open (fixed: anim now driven by simT; updEnv dt was too small), dark tube well visible, missile held below deck; gas burst fires at end of hold. (2) breach FX enlarged (160 white cloud puffs 8-18 m, 260 spray droplets, foam ring), breach cam R*1.5. (3) hull: tile albedo brightened (44-60), fill 4.2 / rim 4.5 underwater -> tiles read at mid distance. (4) bubbles capped at 600 (single THREE.Points draw call = one GPU draw for all bubbles; NOT InstancedMesh — Points is already one batched draw; swap to InstancedMesh only if merge QA wants it), burst 220, trail ~14/frame. (5) gspace sun sprites/ghosts hidden while camera is under water.
+VERIFIED: WebKit 0 console/page errors; launch logic (tube hold -> rise -> air) ok. Shots looked at (post off): progress/sub_launch3p_hatch2_v12.jpg (hatch open, tiles, god rays — GOOD), sub_launch3p_tube_v12.jpg / rise_v12.jpg (hull+bubble column good BUT a big bright rounded blob above the sub), sub_launch3p_breach_v12.jpg / breach2_v12.jpg (white base cloud + spray + missile trail now visible, roughly Trident-like base, BUT the same brown rounded-square blob behind it).
+BLOB (for wh): rounded-square soft billboard, bright when underwater above the sub, brown in air at the breach; not particles (no NaN in smoke/fire arrays), not gsub bubbles, not camera NaN, not the HW explosion (fixed pass 3), persists with all post passes off. Visible meshes near camera: only the 30000-radius ShaderMaterial BufferGeometry and planes — suspect a camera-facing puff/billboard (g1 clouds instance or a missile smoke billboard). Unresolved.
+NOT DONE: breach column height vs Trident photo still lower (photo ~5x missile length tall); all-vehicle spawn not re-run this pass; iPhone fps.
+
+=== wh: SHARED BLACK-BLOCK FIX + MIRV detail - Oct 21 ~4:40 PM ET ===
+*** msl / sub / ship / world / ui builders READ THIS ***
+gnanfix.js (NEW, no core file edited, nothing to back up): two tiny sanitize ShaderPasses on the main composer
+  (1) right after pass[0] (RenderPass or N8AO) -> NaN/Inf -> 0, rgb clamped 0..64, BEFORE SMAA/cine/bloom;
+  (2) right before OutputPass -> catches negatives/NaN from the cinematic grain/vignette pass (OutputPass sRGB pow() turns rgb<0 into NaN = black).
+  Re-asserts position every frame (survives ggfx applyTier N8AO swap). Also hooks WS.comp (world_space orbit composer) if present at load.
+  build.sh insert: LAST in list (after world_space.js, gwh_mirv.js). Debug toggles: window.__nanfix / __nanfix2 .enabled
+VERIFIED: over-ocean repro (destroyer spawn, cam 400 m off, KW at 1.3 m, desktop tier 2 = N8AO+SMAA+cine+bloom):
+  guard OFF = 88% of frame black, guard ON = 0% (with world_space.js in the build too -> world's sky/log-depth fix alone does NOT cure this one).
+  New MIRV shots over open ocean with bloom ON are clean. 19/19 vehicles, 0 console errors.
+NOT REPRODUCED in my runs (so fix unproven there): msl "black first 0.5 s at VLS" (SM-3 frames 0-0.5 s clean with guard on AND off),
+  sub underwater/hatch/breach/climb in test_gsub.html + gnanfix (private copy test_wh_gsub.html; clean on and off at 640x300 non-mobile),
+  ship wide pad shots (starship spawn clean). The brown blob in the sub climb shot is unexplained/untested.
+  => msl/sub/ship: add gnanfix.js LAST in your private build and re-run your own repro; report if black persists with __nanfix on.
+gwh_mirv.js (NEW): MSL_MODELS.mk12a -> detailed Mk12A RV (sphere-cone, tape-wrapped carbon-phenolic, joint ring + lighter aft band, ports, graphite nosetip, aft closure w/ fittings);
+  MSL_MODELS.mm3pbv -> MM III post-boost bus (riveted Al frustum, deck, PSRE nozzle, 8 ACS, cable harness, avionics boxes, 3 RV pedestals). Bus mesh swapped in when shroud sep / bus phase starts; each RV hides on release.
+  insert after gwh.js. VERIFIED: manual ICBM -> bus shown -> RVs released (new Mk12A in scene), 0 errors. Shots: progress/wh_mirv_bus.png, progress/wh_mirv_rv.png, refs/mirv/compare.png (+sources.txt).
+  UNVERIFIED: auto (non-manual) ICBM bus path and SLBM/Trident (no Mk5/W88 model yet - uses Mk12A); RV cones read a bit slender vs photo; no reentry-heating glow on the new RV (old rvFx still applies).
+STATUS: gnanfix READY (low risk); gwh_mirv READY; gwh READY.
+
+[msl builder, FINAL, Oct 21 ~4:40 PM ET] — READY
+BUILD ORDER: ... gspace.js gicbmstage.js gstaging.js msl_sm3.js msl_cutoff.js gstarflop.js ... gdeclutter.js gnanfix.js msl_sm3cam.js (msl_sm3cam LAST, gnanfix just before it). Exact list in /tmp/msl_build.sh.
+FILES: src/msl_sm3.js, src/msl_cutoff.js, src/msl_sm3cam.js (new). Core edits: gstaging.js L32 (manual ICBM throttle 1), gshuttle.js (SSME cutoff x2 + catenary wires), g7.js (ENGINES ON/OFF, shuttle HUD label). Backups: /workspace/milsim/backup_*_msl_*.js. Exclude gmsl2_stage.js/gmsl2_sm3.js.
+LAST PASS:
+ - VLS exhaust cloud: up to 6 puffs/frame around the missile tail while it's < 50 m above the deck, hard cap 140 puffs per launch (iPhone). Booster black band widened (0.10-0.24 of the booster).
+VERIFIED (WebKit, ERR [] on every run, bloom ON with gnanfix):
+ - progress/msl_sm3_vls_hatch_bloom.png: NOT black anymore. Open cell, missile in the hatch, exhaust cloud billowing on deck. gnanfix fixes our black frame too.
+ - progress/msl_sm3_band_sep.png: the spent Mk72 booster falling with no flame; its black aft band is clearly visible.
+ - progress/msl_sm3_cloud.png (57 m): clean, missile/plume/fins. The cloud has stayed below the frame by then.
+UNVERIFIED / HONEST GAPS:
+ - Between ~20 and 50 m the cloud is still thinner than the JS Maya photo (sparse puffs, not one solid wall). A later polish pass could add a single large billboard cloud mesh instead of more particles.
+ - The deck/hull reads very dark in the hatch frame (ship material/lighting, not msl).
+ - The UI builder owns the attitude-ball position, stacked HUD text and the SCORE/LAUNCH overlap.
+STATUS: msl code READY TO MERGE.
+
+=== WORLD builder update 3 (Oct 21 ~4:40 PM ET) — space pass 3 + Kyle's US-overview notes ===
+FILES: src/world_space.js (updated), NEW src/world_land2.js, src/gworld.js (2 edits: far LOD SEG_LO 12 -> 28 touch/36 desktop, SEG_HI 40/56 -> 48/64; exposes W.mat), NEW tex/us_sat_bmng.jpg (NASA Blue Marble NG JULY 2004 500 m tiles, 3840x2292 crop of the US). Backup of old gworld: /tmp/gworld.bak.js.
+BUILD.SH INSERT: world_land2.js right after world_space.js (both after gdeclutter.js, before moon_mission.js). Needs ggfx.js (cloudDeck) and g1 ocean/farOcean/clouds earlier in the build.
+SPACE:
+ - Moon/planet camera: direct lookAt in the orbit renderFrame; projected NDC checked = (0,0) before each shot. VERIFIED by eye: Moon centered at 1 deg FOV with LRO craters and correct phase (world_v4_moon.png, world_v3_moon.png); Venus/Mars/Jupiter dots centered.
+ - Planet positions label-checked vs PyEphem (J2000 RA/Dec, 2026-10-21 19:53 UTC): Venus 0.02 deg, Mars 0.00 deg, Jupiter 0.03 deg, Saturn 0.08 deg off. Colour order matches labels (Venus brightest/white, Mars orange-red, Jupiter cream).
+ - Limb: band now a deep blue (0.03,0.20,1.0), Earth desaturated 28% and slightly warmed. compare.png updated (refs/world_space/compare.png).
+ - Milky Way: seam-safe textureGrad + max anisotropy, and fades out when magnified (tele zoom), so the 4k texture's blobs don't show as stretched smudges. Partly verified: the smudges are gone from the Jupiter tele shot; not re-checked looking straight at the galactic pole.
+LAND (Kyle's world_v2_us_hi notes):
+ - Satellite colour: terrain fragment shader samples the NASA July Blue Marble crop by lon/lat (deserts, Rockies, forests, Great Plains), rock on steep slopes, enemy island keeps its own colours. VERIFIED by eye (world_v5_rockies/east).
+ - Coast: soft sand-to-land blend by height (per pixel) + 2-3x finer far LOD. Visibly smoother (world_v5_east), but the shoreline still follows a 60 m raster, so very close views still show slight steps. NOT a vector coastline yet.
+ - Ocean arc seam: cause = 60 km Water square vs farOcean ring meeting at 30 km. Water now scales with camera height (x1-x12) and the ring hides above 1.4 km. Arc is gone in the 17 km and 5 km views. NEW ISSUE: at 5 km the far Atlantic reads as a flat pale/white sheet (Water reflecting the hazy sky), which looks unrealistic.
+ - Clouds: cotton-puff sprites hide above 2.6 km; the cloud deck uses domain-warped multi-scale fBm with regional coverage (cumulus fields). NOT verified: barely visible in the test shots.
+CORRECTION to update 2: the "black half-screen above 5 km" is a WebKit headless SCREENSHOT artifact under box load, not a game bug. Proof: WL.probe() renders the same views off-screen with readPixels and finds 0 black pixels at 17 km, 5 km and 1.5 km. The Sky z-clamp patch is harmless and stays, but it is not a confirmed fix. Note for all builders: shots taken under load can show stale or partly black canvases and are one camera-override behind, so take each shot twice.
+TEST: WebKit, render lock, free-mem check, ERR [] on every run.
+STATUS: NOT READY. Space is close to ready. Land is improved but still needs: the white far-ocean sheet, cloud-field verification, and a finer coastline (vector or 15 m raster).
+
+=== gsub pass 5 — Oct 21 ~5:05 PM ET — STATUS: NOT READY (big step; remaining polish listed) ===
+BUILD: /tmp/gsub_build2.sh now ends "... gsub.js gnanfix.js" (wh's NaN fix LAST). All shots this pass with post-processing ON — no black frames.
+BLOB ROOT CAUSE + FIX: gstaging-area HYPERSONIC gameHook (built line ~6703) releases 3 HGV warheads when o.pos is within 7000 m of the target; it saw the missile held in the tube -> 3 RVs spawned under water and exploded at once -> 90 brown explosion smoke particles (size 140, clamped point sprites = rounded-square blob). Found by hiding Points (blob gone) then tracing projs.push/smoke.spawn. Fix in gsub: held missile (+any extra projs from the same fire) hidden from window.gameHook during tube phase and first 1.5 s after breach, gsT reset while held; glide bodies get vel.y>=30, y>=6 for 2.5 s after breach (o.hw ground check). Verified: 0 big smoke particles, 0 RV spawns during launch.
+HULL: near-black irregular anechoic tiles (random row heights/widths, rare repaired tiles), salt/grime streaks, bump map; TURTLEBACK fairing (flat-topped extruded hump over both hatch rows, tiled); hatches 0.38 m thick, flush in turtleback with seam ring; hinge barrel + 2 arms; open tube shows wall + muzzle membrane (dome, ruptures/hides at gas ejection).
+BREACH: column of white gas/steam/water built up behind the missile for 1.6 s up to ~68 m (~5x 13.4 m D5 length) + base cloud, spray, foam ring.
+VERIFIED: WebKit 0 console/page errors; all 22 vehicles spawn; launch logic ok; depth >360 m.
+BEST SHOTS: progress/sub_launch3p_hatch2_v13.jpg (turtleback, flush hatches, open hatch, dark tiles), sub_launch3p_rise_v13.jpg (whole boat, bubble column, no blob), sub_launch3p_breach2_v13.jpg (tall column, no blob). compare: refs/gsub/compare.png.
+REMAINING: breach base narrower than Trident photo (photo has a wide low skirt); membrane not visible from current hatch cam angle (cam is low); hatch-top arm bars read a bit like handles; tiles read slightly too regular-contrasty at closest range; scene haze bright at breach (post); iPhone fps; subx interaction.
+[ship builder, Oct 21 #8]
+ - Test build now also includes world_space.js (after gdeclutter.js) and gnanfix.js (last).
+ - SHUTTLE ORBIT BLACK VIEW: ROOT CAUSE FOUND + FIXED (core edit src/gshuttle.js, backup /tmp/shipw/gshuttle.bak). The payload-bay door radiator mesh (shLoft 'di', material m.rad with a stripe map) had NO uv attribute. Once the doors opened in orbit it shaded to NaN and bloom spread it over the whole frame (lum 1). It now gets cylindrical UVs. Bisected by hiding each orbiter child: that mesh alone restored the frame. After the fix: lum 54 in orbit, valid shots progress/ship_bay_shuttle_open.png + ship_bay_shuttle_sat.png (real ascent, warp 10, ERR []). world_space.js alone did NOT fix it.
+ - #15 CORE EDITS: graptor3.js (backup /tmp/shipw/graptor3.bak): powerhead plumbing per engine (2 main ducts, 4 small lines, hot-gas manifold ring, ignitor box; low-poly tubes, 39 engines). grockets.js steel(): new 512x2048 weld-bead bump map (circumferential + vertical beads) on Starship/SH steel materials (bumpScale 1.2).
+ - gplume.js REVIEW (no edit): altitude-dependent already. Vac factor sstep(3000->60000 m) dims the plume light by 80%; plume width grows up to x(1.8+7) Starship between 8 and 40 km, length x2.5. Missing: no opacity fade or colour shift with altitude. Suggest the owner add an opacity fade (*(1-0.5*va)) for the faint vacuum bell.
+ - Shots: progress/ship_ss15_v2_{raptors_sh,raptors_ship,welds}.png. Weld relief visible. Plumbing NOT visible in any shot yet (from below it is hidden by the skirt; the side shot ss15_v2_raptor_side missed the engines). Plumbing unverified by eye.
+ - Spawn check after all edits: 22/22 spawn, ERR [].
+ - Not measured: iPhone perf cost of the extra tubes (~10 meshes x 39 engines) and the bump maps.
+--- gsub pass 5b (Oct 21 ~5:15 PM ET): continuous trail filler (overlapping puffs every ~2.5 m between frames during launch air phase) + sun halo/ray/ghost sprites hidden while the launch cam is active (removes sky halo arc). Post ON + gnanfix, 0 errors. Shots: progress/sub_launch3p_breach2_v14.jpg, sub_launch3p_climb_v14.jpg (continuous trail, no halo). Residual: top of trail right at breach still slightly beaded (base fire-trail dots) — clears by climb. Status still NOT READY (items in pass 5 list).
+
+=== HANDOFF (ui_ polish pass 2, Oct 21 5:05 PM ET): #1/#11 + Shuttle/Starship HUD - status: READY (one regression check pending, see below) ===
+Files changed: src/ui_mw2.js, src/ui_cards.js; NEW thumbs/b2.jpg, thumbs/himars.jpg (rendered from in-game models). Insert position unchanged (ui_prestige.js ui_mw2.js ui_cards.js at END). Core edits: NONE (all fixes are layout overrides from ui_mw2 lay()).
+- Tabs: "Space & Experimental" -> "Space"; tab strip has 18px fade mask on both scroll edges.
+- Air defense cards: speed/weapons = THAAD M8.2 / 8 MSL, David's Sling (Stunner) M7.5 / 12 MSL, Patriot PAC-3 MSE M5 / 12 MSL, Iron Dome (Tamir) M2.2 / 20 MSL (public figures; PAC-3 MSE speed not officially published, commonly cited ~Mach 5).
+- B-2 + HIMARS thumbnails (HIMARS spawned via menu flow; __milsim.spawn bypasses the glaunchers HIMARS wrapper - note for QA).
+- Killstreaks: if the right column has no room or collides, compact 22px row under the minimap; hides only if even that would overlap.
+- Shuttle (body.mwSh): duplicate #hcards/#hc/#hr/minimap/KS hidden (#shInfo has ALT/VEL/MACH); #shInfo under the eye button, MW2 style; shuttle buttons (LAUNCH/AUTOPILOT/TIME/CAM) as 2x2 grid under the top bar, below #shInfo in portrait. Fixes shInfo-over-cards overlap and the score panel (#hr) under LAUNCH/AUTOPILOT.
+- Rocket attitude gauge (gcam ADI): 76px, moved out of bottom-centre (no longer covers engines) -> right of the joystick in landscape, above the joystick (right of AP) in portrait. AP button moved off LAUNCH (landscape) / off the joystick (portrait).
+- Rocket portrait: #hcards pushed below the top bar; #hr hidden when it would collide with the card stack (current weapon still shown by ammo readout). #msg toast width-limited between stick and thumb cluster; in portrait it's placed in the first free slot (hidden if none).
+Tests (WebKit, one browser per run, closed): ui_fly.mjs (new; Shuttle + Starship launched, 844x390 / 956x440 / 390x844, pairwise overlap of every HUD element incl. #shInfo, #shBtns, ADI, mission chips): 0 fails, 0 console errors. ui_test_owner.mjs tap-through + 6-size overlap: 0 fails, 0 errors.
+Shots: progress/ui_fly_shuttle_L.png, ui_fly_shuttle_P.png, ui_fly_starship_L.png, ui_fly_starship_P.png, ui_owner_jet.png, ui_owner_airdef.png, ui_owner_select.png.
+UNVERIFIED: the 26-vehicle spawn sweep didn't run after these changes (last run's screenshot timed out at load ~77; free RAM <2 GB, so held per rules); it passed before the pass and the changes are layout-only. ADI placement was checked by forcing it visible (headless rAF didn't draw it); Starship onboard camera not separately shot (same ADI code path). Shuttle in ascent / after SRB sep not shot.
+
+== #21 wpn (MW2 weapons + on-foot FPS) — WORKING v1, NOT VISUAL-READY (Oct 21 5:15 PM ET) ==
+Files: src/wpn_data.js wpn_models.js wpn_fps.js. Insert after gdeclutter.js (and after world_space.js if present), before gnanfix.js (gnanfix stays LAST). Test: /tmp/wpn_build.sh -> test_wpn.html, port 8822.
+New this pass: stance (stand/crouch/prone) via TWO-FINGER vertical swipe on the look side (down = lower, up = raise; pinch stays ADS); sprint when stick is fully pushed (standing, not ADS/reloading) with viewmodel sprint tilt; recoil reduced crouch/prone; full-stick push from prone stands up. No new buttons, left stick untouched. Core edits: none.
+Tests (WebKit headless): 42/42 weapons fire (incl. hold-to-ADS snipers/Stinger/Javelin), 10 equipment throw, reload OK, killstreak OK, crouch eye 1.1 m / prone 0.45 m, 0 console errors. Vehicles: an earlier run this pass had 23/23 spawning, 0 errors; the latest re-run's browser crashed during the 23-vehicle loop (box RAM ~1.8 GB free), so that's unconfirmed on the final build.
+GAPS (why not READY): models are blocky primitives with floating parts (stock/grip gaps) — far below the CoD Mobile bar; arms are cylinders; no reload/mag-drop animation; no hitmarker sound; first-person screenshots captured the main menu (spawn via __milsim.spawn did not leave the menu) so in-game FP visuals are unverified. compare.png in refs/weapons shows the gap vs real photos.
+
+=== C1 (Nov 3, port 8831, test file test_c1b.html via /tmp/c1b_build.sh) ===
+FILES: src/c1_glue.js (NEW), src/mp_net.js (EDIT: reserved gamer tags — kyle/kyleoneill/kyleoneill5/dominion/owner/ceo/admin, override window.MP_RESERVED; only owner may use; killfeed passes ids). Backup /tmp/c1/mp_net.bak.js
+ORDER: ui_* blocks at test.html positions (UI_PRESTIGE/UI_MW2/UI_CARDS), then mp_net mp_aim mp_save mp_mod mp_modes mp_streak, then c1_glue LAST. mp_relay.js = test-only, do not ship.
+VERIFIED (Chrome swiftshader, NOT WebKit — host lacks webkit libs, apt broken): home loads, MW2 menu + rank card render, Multiplayer row present, owner-only Mod row hidden on non-owner device, 0 console errors except favicon 404. Shot: progress/c1b_home.png
+FIX: __mp.active defined (ui_cards checked a nonexistent flag, so Air Defense tab never hid in MP).
+UNVERIFIED: 2-peer MP session (page crashed under box load ~60), Air Defense streak @7 in MP, owner UFO/aimbot, backup-code restore, vehicle spawn sweep, WebKit.
+MERGE TODO: pin window.MP_OWNER_PUB to Kyle's iPhone key — until then any host becomes owner.
+NOTE: a second C1 crew runs in parallel (test_c1.html, /tmp/c1_build.sh); both share the src/mp_net.js edit.
+
+=== HANDOFF C5 starship (#12 #13 #15 #19 + Shuttle/B-2 in menu) — Nov 3 2026 8:25 PM ET — STATUS: LOGIC READY, VISUALS PARTLY UNVERIFIED ===
+FINDING: all C5 items were already in the committed base (test.html 59e35e9): gmechazilla_arms.js, gstarflop.js, gship_catch.js, gship_bay.js, graptor3.js (+powerhead plumbing), gplume.js (vacuum fade + colour shift already present), gsh_gridfin.js, grockets.js tiles/weld bumps. No rebuild needed.
+BUILD: /workspace/milsim/c5_build.sh (copy of /tmp/c5_build.sh) -> test_c5.html = test.html + src/c5_ship.js + src/gnanfix.js (LAST). BUILD_OK (node --check).
+ - src/c5_ship.js (NEW, test hook only: window.__c5.kinds()/names()). Insert anywhere after DEFS exist (end of bundle, before gnanfix.js).
+ - BUILD-TIME FIX (please apply to src/gdetail_darkstar.js at merge): darkstar spawn threw "Cannot assign to read only property 'position'" (Object.assign(loft(...),{position:new T.Vector3(s*1.25,-0.55,0)})). c5_build.sh replaces it with Object.assign(loft(...),{})) + g.children[last].position.set(s*1.25,-0.55,0). After fix: darkstar spawns, no error.
+TESTS (headless google-chrome + SwiftShader; WebKit could NOT run: box lacks WPE libs and apt can't reach deb.debian.org):
+ - #12 __shipCatch.test(): 13->3 centre Raptors @1197 m, divert to tower @449 m, hover + arms closing @60 m, BOOSTER CAUGHT, touchdown 2.25 m/s, x=-0.2 m. PASS.
+ - #13 __gsflop.test(): terminal guidance @20 km, belly-flop, FLIP @559 m (aft flaps fold, Raptor relight), 2 Raptors @220 m, 1 @45 m, soft splashdown. PASS.
+ - Spawn run (test_c5.html, pre-darkstar-fix): 18/22 OK incl. starship, shuttle, b2, rods, falcon9. darkstar = the bug above (now fixed, re-spawn OK). sr71/tr3b/saucer only failed after the browser crashed from box OOM (load ~85); NOT re-verified in a clean page.
+ - Console: only Chrome's navigator.vibrate notice and one 404 resource (pre-existing; not traced). Shader/context-lost errors seen only after OOM.
+ - Shuttle + B-2 in menu: DEFS.shuttle 'Space Shuttle (STS)' and DEFS.b2 'B-2A Spirit' present and spawn; not relabelled WIP (both functional).
+ - #19 bay: not re-run tonight (box OOM); last verified Oct 21 in WebKit (shuttle + starship real ascent, FIRE deploy, WPN cycles ROD/WSAT/SBI, ERR []). Code unchanged since.
+SHOTS (640x360, wide only; close-up camera shot hook did not move the camera in this run): progress/c5_ss_hotstage.png (full stack on OLM beside tower), progress/c5_catch_4_caught.png (booster held by chopsticks). Close-ups of #15 detail: see Oct 21 progress/ship_ss15_*.png.
+UNVERIFIED: #15 close-ups in this build, #19 rerun, sr71/tr3b/saucer spawn in clean page, iPhone fps, 404 source.
+
+=== C2 (msl/wpn, port 8832), Nov 3 2026 ~8:25 PM ET: #2 #7 #14 #16 #21 and #27 check. WORKING, logic verified, visuals partly verified ===
+BUILD: /tmp/c2_build.sh -> /workspace/milsim/test_c2.html (node --check BUILD_OK). BASE = /workspace/apex-pages/test.html (HEAD 59e35e9). Do NOT use milsim/test.html: it is older and lacks #27b (its ICBM_ST is still 62/56/48).
+HEAD already contains msl_sm3, msl_cutoff, msl_sm3cam, gwh, gwh_mirv, gnanfix, gmirvlock and #27b. C2 only appends src/wpn_data.js wpn_models.js wpn_models2.js wpn_fps.js before the closing </script>. For build.sh order use: ... gdeclutter.js wpn_data.js wpn_models.js wpn_models2.js wpn_fps.js gnanfix.js msl_sm3cam.js (msl_sm3cam LAST). Core edits: none this session.
+TESTS (Chrome + swiftshader headless, 640x360; WebKit is broken on the box right now because of missing libs after the playwright 1.64.1 reinstall). Scripts: c2_t.mjs, c2_t2.mjs, c2_t3.mjs.
+ - Vehicles: 23/23 spawn with no errors.
+ - #21: 42/42 weapons fire, 10 equipment, 16 attachments, 15 killstreaks. UAV killstreak fires. FP on foot with M4A1 is on (mag 30/120).
+ - #14 (Falcon 9 manual): throttle 0 -> cut:true lit:0 and 0 propellant used while cut. Throttle 1 -> relight ramps lit 0.28 -> 1 (ignition sequence). Jets hold 6% idle.
+ - #7 SM-3 from the destroyer: phases 0->4 at t 0/6.1/20.9/31.4/38.9 s, 55 km at 3.2 km/s in phase 4, max altitude 110 km (space). 12 debris pieces, so spent stages drop away.
+ - #2: progress/c2_sm3_stage.png shows "MK 72 BURNOUT - BOOSTER SEP" with the spent booster falling clear.
+ - #27 (MM3 silo, manual): stage 1->2 at ~61 s, 2->3 at ~127 s, bus at ~188 s. __gmsl2TS stays 1 (real time) through the whole boost and goes to 5x only after burnout. PASS.
+ - MIRV auto-lock: in the bus phase __mirvlock.bus is true and 24 targets are locked with boxes drawn.
+ - Console: 0 errors, except one favicon.ico 404 (harmless). An earlier run showed THREE "Shader Error VALIDATE_STATUS" with a null log, and once the target crashed. Both happened during box overload (load 75, <1 GB free) and look like swiftshader context loss, not code. Not reproduced on the last 2 runs.
+BUGS FOUND (not fixed):
+ - (a) In progress/c2_icbm_bus.png at 640x360, the camera pills (Follow/Chase/Nose) and the RELEASE RV/AUTOPILOT/BOOST/FPV/IR buttons overlap the speed/alt HUD at top left. That's a ui_ (C1) issue.
+ - (b) The MIRV lock boxes (24) are clamped to the screen edges, the targets are off-screen, and the cap 3 doesn't seem to limit them. Needs a check by eye at iPhone size.
+UNVERIFIED:
+ - #16 HGV/KW detail and flight feel were not re-shot this session (the Oct 21 shots exist).
+ - The MIRV tap-select was not exercised.
+ - #21 weapon models are still the v2 procedural models, below the CoD Mobile bar.
+ - Nothing tested in WebKit/iOS this session.
+ - NOTE: a second C2 agent also used test_c2.html and port 8832 (c2_logic.mjs, c2_daemon.mjs). Those are not mine.
+
+== C6 navy/enemies/ground (#6 #10 #20 #22 #24) — Nov 3 2026 8:30 PM ET ==
+Build: /workspace/milsim/c6_build.sh (copy of src/build.sh) -> test_c6.html. Test: c6_test.mjs (port 8836).
+build.sh insert, after gdeclutter.js: gdetail_enemy.js gnavy.js gnavy_enemy.js ppl_people.js tank_core.js base_bases.js base_walk.js c6_wire.js
+Core edits: NONE. New file: src/c6_wire.js, which adds PPL.crew deck crews (US 'crew' kit on the 6 NAVY_FLEET ships, 'enemy' kit on the Red ships, placed by deck raycast) plus a window.__c6 debug hook {DEFS,spawn,player}. Deploy must copy models/ (ppl_soldier.glb).
+TESTED (headless CHROMIUM + SwiftShader; WebKit can't launch on the box because its libs are missing and apt is offline):
+ - node --check BUILD_OK.
+ - All 29 DEFS spawn alive via spawn(k)/__tank.spawnK(k), including foot and the 6 armor types. Run 1 crashed at tr3b (OOM, box load ~89); run 2 resumed from tr3b and passed.
+ - US fleet spawns ford, burke, tico, zumwalt, lcs, america. Red force: 10 units (ships, subs, jets incl. j20/fa18e). ENEMY_RULES forbid tr3b/saucer/sr71/sr72/darkstar; subs get cruise+torpedo only.
+ - Abrams player spawns, with 5 armor AI (4 red). On foot at AFB: 13 enterable props. Deck crews placed: 36.
+ - Last run: ZERO console errors. Run 1 logged one Chromium-only navigator.vibrate warning and, after OOM, SwiftShader shader errors.
+UNVERIFIED: WebKit/iPhone run; FPS; enter/exit flow (only base_test.mjs from Oct, not re-run); enemy weapons firing (redW=0 after 10 s); visual check of crews/ships/tanks. Screenshots progress/c6_abrams.png and c6_onfoot.png are INVALID because they show the main menu overlay (menu not dismissed in the test). Mixamo Soldier.glb license still needs an OK.
+
+=== C4 HANDOFF (world/space/moon/nuke: #4 #5 #18 #25), Nov 3 2026 ~8:50 PM ET. STATUS: BUILT, LOGIC-VERIFIED, RENDER-UNVERIFIED ===
+BUILD: /workspace/milsim/c4_build.sh -> test_c4.html (node --check BUILD_OK). Base = committed test.html (already contains gworld.js #5, the Natural Earth US landmass).
+ORDER (appended before the closing script tag, in this order): world_space.js, world_land2.js, moon_models.js, moon_phys.js, moon_flight.js, moon_hls.js, moon_mission.js, nuke_fx.js, gnanfix.js (LAST). For build.sh: put these after gdeclutter.js. world_space must come before moon_mission (renderFrame wrap order), world_land2 right after world_space, and nuke_fx after gnukefx.js.
+CORE EDITS: none. No new code this session. This is the integration of the existing Oct 21 modules.
+TESTED:
+ - test_c4.html loads in headless Chrome (swiftshader). All modules are present (__wspace, __wland, __moon, NUKE2, __world). Load errors: 0 on one run; another run had one 404 resource, same as base test.html (not from C4).
+ - Moon mission logic (node c4_moonlogic.js, run from src/): runs the full Apollo mission, count>ascent>parking>tli>td>coast>loi>lorbit>descent>landed. Saturn V staging happens one stage at a time (S-IC cutoff/sep, S-II ignition, interstage, LES, S-II sep, S-IVB orbit, restart TLI), then T&D/LM extraction, MCC, LOI, DOI, PDI, and touchdown at 0.7 m/s after 76.8 h. dv: TLI 3159 m/s, LOI 884 m/s.
+ - All 4 texture paths referenced by the modules exist under tex/.
+UNVERIFIED (box at load 75-87; every headless render crashed the renderer in the first spawn step, on base test.html too, so this is the environment and not C4):
+ - Vehicle spawn sweep. Note that ac130/foot/infantry are not valid DEFS kinds in this base. 'fighter' showed swiftshader shader VALIDATE warnings before the crash, and that's unconfirmed on a real GPU.
+ - Orbit view/readout/limb, Moon pad scene, nuke visuals: no screenshots this session. The last visual evidence is the Oct 21 shots (progress/world_v4_moon.png, world_v5_east.png, nuke_ground_mushroom.png etc. if present).
+ - WebKit is unusable on the box now (Playwright was updated and its system libs are missing; install-deps fails on fonts-freefont-ttf).
+ - Known remaining from Oct 21: coastline is still 60 m raster (not vector); limb colour polish; iPhone fps with MSAA x4 not measured.
+
+=== C3 (sub: #3 #8 #9 #23, verify #26 #28) — Nov 3 2026 ~9:05 PM ET — STATUS: WORKING v1, PARTLY VERIFIED, NOT POLISHED ===
+BUILD: test_c3.html via src/c3_build.sh (private). Base = /workspace/apex-pages/test.html (HEAD 59e35e9, has #26/#27/#28). Inserts src/gsub.js then src/subx_sub.js immediately BEFORE gnanfix.js (gnanfix stays LAST). For build.sh: "... gdeclutter.js [world_space.js] gsub.js subx_sub.js gnanfix.js". gsub_ocean.js is SUPERSEDED, don't include it. Core edits: NONE. New code this session: none (Oct 21 gsub/subx modules reused as-is).
+NOTE: HEAD test.html did NOT contain gsub/subx (only the old Oct 23 milsim/test.html did), so merge must add them. Copied 16 missing *_m.jpg textures from apex-pages/tex into milsim/tex (fixes 404s when serving milsim/).
+ENV NOTE: box rebooted ~8:35 PM; WebKit deps gone and node_modules wiped. Tests now run headless Chrome (/opt/google/chrome/chrome, swiftshader) with playwright-core. The navigator.vibrate console warning is Chrome-only (no user tap in headless), not a game bug.
+TESTED (c3_t.mjs, gsub+subx logic, 844x390): sub fires HYPERSONIC from 30 m: tube phase -> hatch/gas -> air phase breach at t≈2.8 s, climbs to 267 m by 4 s; 3rd-person launch cam follows (cam y tracks the missile). SLBM tube launch OK. Dive to 420 m holds (depth 420, seafloor -578 m). Underwater frame mean brightness 96/255 at 420 m (visible, not black).
+  NB: that run was on the Oct 23 base (before the switch to the HEAD base). It showed 2 THREE shader VALIDATE errors under swiftshader, not re-checked on HEAD.
+TESTED #26 on HEAD+C3 (c3_v.mjs ad): sub at 60 m, cruise ASM fired: missile bottomed at y=1.8 (surface burst), sub alive, hp 100 -> deep sub immune. OK.
+#28 surface IDAS + destroyer SM-2/ESSM/RAM/CIWS: see C3 addendum below if it lands; otherwise UNVERIFIED this session (it passed on HEAD in the Oct fix28b run).
+ENEMY SUBS: gnavy_enemy ENEMY_RULES sub:['cruise','torpedo'] (code check only).
+UNVERIFIED: zero console errors on the final HEAD+C3 build (the browser crashed in long runs under load); the all-vehicle spawn sweep (crashed twice; not run since the reboot); new screenshots (none taken). Latest visual shots are from Oct 21: progress/sub_launch3p_hatch2_v13.jpg, sub_launch3p_rise_v13.jpg, sub_launch3p_breach2_v14.jpg. Still open polish from gsub pass 5: wide breach skirt, membrane visibility, tile contrast, iPhone fps.
+--- C3 addendum (9:09 PM ET) #28 sub IDAS on HEAD+C3: sub at 1 m: IDAS launched 1 SAM at the inbound ASM, sub hp 100 / alive (no confirmed kill inside the 15 s window). Sub at 60 m and 300 m: 0 SAMs (IDAS correctly off when deep), sub unharmed. Destroyer SM-2/ESSM/RAM/CIWS run did not finish before the deadline: UNVERIFIED this session. Browser closed and processes killed.

@@ -1,0 +1,2 @@
+await A.waitForFunction(()=>document.getElementById('flPlay'),null,{timeout:300000});await A.waitForTimeout(8000);
+return await A.evaluate(()=>JSON.stringify({mw:typeof __mwMenu,items:window.__mwMenu&&__mwMenu.items.map(i=>i.id),prog:window.__prog&&__prog.d,card:!!document.getElementById('mwCard'),mv:typeof menuView!=='undefined'?menuView:'NA',btns:[...document.querySelectorAll('#menu .dmBtn')].map(b=>b.id+':'+b.textContent)}));

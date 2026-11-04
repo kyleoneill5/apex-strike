@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang="en"><head><meta name="theme-color" content="#000000"><meta http-equiv="Cache-Control" content="no-cache"><style>html,body{background:#000!important}</style><meta name="apple-mobile-web-app-title" content="DOMINION"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><title>DOMINION: ALL DOMAIN WAR - Military Flight & Naval Simulator</title>
+<style>*,*:focus,button,canvas,div{-webkit-tap-highlight-color:transparent!important;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;outline:none!important}html,body{background:#000;overscroll-behavior:none;touch-action:none}canvas{display:block}
+
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#cfe;touch-action:none}
+canvas{display:block}
+#hud{position:fixed;inset:0;pointer-events:none;font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;color:#8dff9a;text-shadow:0 0 6px rgba(60,255,120,.35),0 1px 1px rgba(0,0,0,.6);font-weight:300;letter-spacing:.5px}
+.panel{position:absolute;background:none;border:none;border-left:1px solid rgba(140,255,160,.45);padding:2px 10px;font-size:12px;line-height:1.45;white-space:pre}
+#hr{border-left:none;border-right:1px solid rgba(140,255,160,.45)}#hc{border:none;border-bottom:1px solid rgba(140,255,160,.45);font-size:13px}
+#hl{left:calc(10px + env(safe-area-inset-left));top:calc(10px + env(safe-area-inset-top))}
+#hr{right:calc(10px + env(safe-area-inset-right));top:calc(10px + env(safe-area-inset-top));text-align:right}
+#hc{left:50%;top:calc(8px + env(safe-area-inset-top));transform:translateX(-50%);font-size:15px;text-align:center}
+#msg{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);font-size:20px;font-weight:400;letter-spacing:2px;color:#b8ffc4;text-align:center;white-space:pre;opacity:0;transition:opacity .4s}
+#cross{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px;border:1px solid rgba(140,255,160,.7);border-radius:50%}
+#cross:after{content:'';position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px;background:#7f7;border-radius:50%}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none}
+#water{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(0,40,60,0) 40%,rgba(0,20,40,.6));opacity:0;pointer-events:none}
+.ov{touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;position:fixed;inset:0;background:rgba(0,8,16,.86);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow:auto;padding:20px 12px calc(20px + env(safe-area-inset-bottom));z-index:20}
+.ov h1{margin:6px 0 2px;color:#8f8;letter-spacing:3px;font-size:28px}
+#menu h1.logo{font-size:clamp(38px,9vw,72px);letter-spacing:8px;margin:2vh 0 0;background:linear-gradient(#fff,#9fd 40%,#3a8 60%,#cfe);-webkit-background-clip:text;background-clip:text;color:transparent;font-style:italic;font-weight:900;text-shadow:none;filter:drop-shadow(0 0 18px rgba(80,255,160,.35))}
+#menu{background:radial-gradient(ellipse at 50% 0%,rgba(30,80,70,.85),rgba(0,6,12,.94) 70%)}
+.tabs{display:flex;gap:8px;margin:8px 0 12px}.tab{padding:12px 26px;border-radius:30px;border:1px solid #4c8;font:bold 17px system-ui;letter-spacing:2px;cursor:pointer;color:#cfe}
+.tab.on{background:linear-gradient(#3c8,#185);color:#fff;box-shadow:0 0 18px rgba(80,255,150,.4)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:4px 0 12px;width:min(820px,100%)}.chip{padding:8px 12px;border-radius:16px;border:1px solid #397;font-size:13px;cursor:pointer}.chip.on{background:#2a6;color:#fff}
+.lbl{color:#7cb;font-size:12px;letter-spacing:2px;margin-top:4px}
+.ov .sub{color:#9ab;margin-bottom:12px;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;width:min(820px,100%)}
+.card{background:linear-gradient(#123,#0a1a22);border:1px solid #2a5;border-radius:10px;padding:12px;cursor:pointer;color:#cfe;font-size:13px}
+.card b{display:block;font-size:16px;color:#9f9;margin-bottom:4px}
+.card:active,.card:hover{border-color:#8f8;background:#1a3a2a}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:12px 0}
+.btn{background:#173;border:1px solid #5c8;color:#efe;border-radius:8px;padding:10px 16px;font-size:15px;cursor:pointer}
+.btn.on{background:#3a6}
+#touch{position:fixed;inset:0;pointer-events:none;z-index:5;display:none}
+#joy{position:absolute;left:calc(18px + env(safe-area-inset-left));bottom:calc(22px + env(safe-area-inset-bottom));width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.25);pointer-events:auto}
+#knob{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px;border-radius:50%;background:rgba(255,255,255,.3)}
+#thr{position:absolute;right:calc(14px + env(safe-area-inset-right));bottom:calc(22px + env(safe-area-inset-bottom));width:58px;height:190px;border-radius:29px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.25);pointer-events:auto}
+#thrf{position:absolute;left:0;right:0;bottom:0;border-radius:27px;background:rgba(120,255,120,.28)}
+#thrl{position:absolute;width:100%;top:-20px;text-align:center;font:12px monospace;color:#cfc}
+.tb{position:absolute;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.35);color:#fff;font:bold 13px system-ui;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:auto}
+.tb.pr{background:rgba(255,255,255,.35)}
+#bFire{right:calc(88px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));width:88px;height:88px;background:rgba(255,60,60,.3);font-size:16px}
+#bWpn{right:calc(88px + env(safe-area-inset-right));bottom:calc(132px + env(safe-area-inset-bottom));width:64px;height:64px}
+#bCtx{right:calc(166px + env(safe-area-inset-right));bottom:calc(98px + env(safe-area-inset-bottom));width:64px;height:64px;background:rgba(255,200,60,.25)}
+#topb{position:absolute;top:calc(8px + env(safe-area-inset-top));right:calc(150px + env(safe-area-inset-right));display:flex;gap:6px;pointer-events:auto}
+#topb div{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:7px 9px;font:bold 12px system-ui;color:#fff}
+.adv{display:none}
+body.advanced .adv{display:flex}
+#bYawL{left:calc(30px + env(safe-area-inset-left));bottom:calc(185px + env(safe-area-inset-bottom));width:50px;height:50px}
+#bYawR{left:calc(118px + env(safe-area-inset-left));bottom:calc(185px + env(safe-area-inset-bottom));width:50px;height:50px}
+#bCam{right:calc(166px + env(safe-area-inset-right));bottom:calc(20px + env(safe-area-inset-bottom));width:54px;height:54px}
+#tut{z-index:30}
+#tut .box,#result .box{max-width:520px;background:#0b1a22;border:1px solid #4c8;border-radius:12px;padding:16px;font-size:15px;line-height:1.5;margin-top:4vh}
+#rocketHud{display:none}
+#mach{color:#f96}
+.pr{filter:brightness(1.25);transform:scale(.97)}.card,.chip,.btn,.tab{touch-action:manipulation;transition:transform .12s,filter .12s}#menu h1.logo .d1{display:block;font-size:1em;letter-spacing:.16em}#menu h1.logo .d2{display:block;font-size:.32em;letter-spacing:.6em;font-style:normal;font-weight:700;margin-top:.15em;-webkit-text-fill-color:#bfe9d8}</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/","three/examples/jsm/":"https://unpkg.com/three@0.160.0/examples/jsm/","postprocessing":"https://unpkg.com/postprocessing@6.36.4/build/index.js"}}</script>
+</head><body><div id="ngSplash" style="position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;pointer-events:none;transition:opacity .6s ease;font:300 13px -apple-system,sans-serif;letter-spacing:.5em;color:rgba(255,255,255,.75)"><img src="brand/ng_logo.png" alt="Neill Gaming" style="width:min(46vw,220px)"><div>PRESENTS</div></div>
+<div id="flash"></div><div id="water"></div>
+<div id="hud"><div id="cross"></div><div class="panel" id="hl"></div><div class="panel" id="hr"></div><div class="panel" id="hc"></div><div id="msg"></div></div>
+<div id="touch">
+ <div id="joy"><div id="knob"></div></div>
+ <div id="thr"><div id="thrf"></div><div id="thrl">THR</div></div>
+ <div class="tb" id="bFire">FIRE</div><div class="tb" id="bWpn">WPN</div><div class="tb" id="bCtx">—</div>
+ <div class="tb adv" id="bYawL">◀Y</div><div class="tb adv" id="bYawR">Y▶</div><div class="tb" id="bCam">CAM</div>
+ <div id="topb"><div id="bPause">❚❚</div><div id="bGyro">TILT</div><div id="bWarp" style="display:none">WARP</div></div>
+</div>
+<div class="ov" id="menu"></div><div class="ov" id="result" style="display:none;z-index:25"></div>
+<div class="ov" id="tut" style="display:none"><div class="box">
+<h2 style="margin:0 0 8px;color:#8f8">How to fly (Easy mode)</h2>
+• <b>Left joystick</b>: drag up/down to pitch, left/right to bank &amp; turn. Release = auto-level.<br>
+• <b>Right slider</b>: throttle (slide up for speed). Jets take off automatically at rotation speed.<br>
+• <b>FIRE</b> shoots the selected weapon, <b>WPN</b> cycles weapons.<br>
+• <b>Yellow button</b> = context action: DIVE/SURFACE (sub), LAUNCH (ICBM/rocket), STAGE, GEAR.<br>
+• <b>TILT</b> toggles steering by tilting the phone. <b>❚❚</b> opens the menu (switch vehicle, Advanced mode).<br>
+• Keyboard: W/S pitch, A/D roll, Q/E yaw, Shift/Ctrl throttle, Space fire, X weapon, G action, C camera, T time-warp, P pause.<br>
+<div class="row"><div class="btn" id="tutOk">GOT IT</div></div></div></div>
